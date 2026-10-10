@@ -8,6 +8,8 @@ Publishes:   /gripper/drive_cmd      std_msgs/Float64  +angle
 Example:  ros2 topic pub --once /gripper/command std_msgs/msg/Float64 "{data: -0.8}"   # open
           ros2 topic pub --once /gripper/command std_msgs/msg/Float64 "{data: 0.09}"   # close
 """
+import math
+
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float64
@@ -25,6 +27,10 @@ class GripperMimic(Node):
         self.create_subscription(Float64, '/gripper/command', self.on_command, 10)
 
     def on_command(self, msg: Float64):
+        # NaN and inf would pass straight through the clamp below
+        if not math.isfinite(msg.data):
+            self.get_logger().warn(f'ignored non-finite command {msg.data}')
+            return
         angle = min(max(msg.data, self.lower), self.upper)
         if angle != msg.data:
             self.get_logger().warn(f'clamped {msg.data:.3f} -> {angle:.3f} rad')

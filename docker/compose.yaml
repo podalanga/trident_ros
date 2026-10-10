@@ -36,15 +36,16 @@ services:
       - ..:/ws
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
       # Whole folder, so a controller plugged in later still shows up
-      - /dev/input:/dev/input
+      - /dev/input:/dev/input:ro
 
-    # Allow access to input devices (major 13) without privileged mode
+    # Read-only access to input devices (major 13) without privileged mode.
+    # The container user is not in the host input group on purpose: joysticks (js*) are
+    # world readable, while keyboards and mice (event*) stay closed to it.
     device_cgroup_rules:
-      - 'c 13:* rmw'
+      - 'c 13:* r'
 
-    # Host group ids for joystick and GPU device files
+    # Host group ids for the GPU device files
     group_add:
-      - '${INPUT_GID:-107}'
       - '${VIDEO_GID:-44}'
       - '${RENDER_GID:-110}'
 

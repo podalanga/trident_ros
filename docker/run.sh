@@ -43,7 +43,6 @@ write_env() {
     cat > "$DOCKER_DIR/.env" <<ENV
 HOST_UID=$(id -u)
 HOST_GID=$(id -g)
-INPUT_GID=$(group_id input)
 VIDEO_GID=$(group_id video)
 RENDER_GID=$(group_id render)
 DISPLAY=${DISPLAY:-:0}
