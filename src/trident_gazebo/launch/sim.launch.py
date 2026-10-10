@@ -33,8 +33,9 @@ def resolve_world(context, gazebo_share):
 
     mappings = {arg: LaunchConfiguration(arg).perform(context) for arg in WORLD_ARGS}
     mappings['textures'] = os.path.join(gazebo_share, 'textures')
-    world_file = os.path.join(tempfile.gettempdir(), f'trident_{name}.sdf')
-    with open(world_file, 'w') as out:
+    # mkstemp picks an unused name and creates the file private to this user
+    handle, world_file = tempfile.mkstemp(prefix=f'trident_{name}_', suffix='.sdf')
+    with os.fdopen(handle, 'w') as out:
         out.write(xacro.process_file(template, mappings=mappings).toxml())
     return world_file
 
