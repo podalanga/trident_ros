@@ -1,0 +1,44 @@
+# RTAB-Map visual SLAM on the D435 colour and depth streams.
+# Shared by mapping and localisation; slam.launch.py adds the few settings that differ.
+# RTAB-Map's own parameters (the ones with a slash) are passed as strings.
+
+rtabmap:
+  ros__parameters:
+    frame_id: base_footprint
+    odom_frame_id: odom          # odometry comes from the EKF transform, not from RTAB-Map
+    map_frame_id: map
+    subscribe_depth: true
+    subscribe_rgb: true
+    approx_sync: true
+    approx_sync_max_interval: 0.02
+    wait_for_transform: 0.3
+    tf_delay: 0.05               # map to odom is republished at 20 Hz
+
+    # The robot lives on a flat floor: solve for x, y and yaw only
+    Reg/Force3DoF: "true"
+    Optimizer/GravitySigma: "0"
+
+    # Look for loop closures twice a second. Links between neighbouring nodes come straight
+    # from the EKF, which is more accurate over a few centimetres than matching images.
+    Rtabmap/DetectionRate: "2"
+    RGBD/NeighborLinkRefining: "false"
+    Vis/MinInliers: "25"
+    # A match must be spread over the image. Without this a QR code alone is enough to
+    # "recognise" the other wall that carries the same code, and the robot teleports there.
+    Vis/MinInliersDistribution: "0.02"
+
+    # Store the visual features and the occupancy grid of each node but not the camera
+    # images. Localisation only needs the features, and the database stays a few megabytes.
+    Mem/BinDataKept: "false"
+
+    # Occupancy grid from the depth image. The camera sits 85 mm up, so anything under
+    # 3 cm is floor (this also keeps the coins out of the map) and the walls stop at 0.3 m.
+    Grid/Sensor: "1"
+    Grid/3D: "false"
+    Grid/CellSize: "0.02"
+    Grid/RangeMin: "0.2"
+    Grid/RangeMax: "3.0"
+    Grid/NormalsSegmentation: "false"
+    Grid/MaxGroundHeight: "0.03"
+    Grid/MaxObstacleHeight: "0.4"
+    Grid/RayTracing: "true"
