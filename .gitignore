@@ -9,3 +9,19 @@ docker/.xauth
 
 # local learning package, not part of the project
 reference/
+
+# Python bytecode, written when launch files and scripts run from src/
+__pycache__/
+*.py[cod]
+
+# recorded bags
+rosbag2_*/
+*.db3
+*.mcap
+
+# editor and OS files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
