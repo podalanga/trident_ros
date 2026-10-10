@@ -6,8 +6,9 @@ Publishes:   /ir/analog     std_msgs/Float32MultiArray  one voltage per channel
 
 Each reading is continuous: 0 V on a black surface up to v_ref (5 V) on a white one, with values in
 between when a channel sits over the edge of a line. Set invert to true for sensors whose
-output goes high on dark surfaces.
+output goes high on dark surfaces, and noise_stddev (volts) to add Gaussian noise per reading.
 """
+import random
 from functools import partial
 
 import rclpy
@@ -25,6 +26,7 @@ class IrArray(Node):
         # Image brightness (0 to 255) that counts as a fully white floor
         self.white_level = self.declare_parameter('white_level', 230.0).value
         self.invert = self.declare_parameter('invert', False).value
+        self.noise_stddev = self.declare_parameter('noise_stddev', 0.0).value
         rate = self.declare_parameter('rate', 20.0).value
 
         self.readings = [0.0] * self.channels
@@ -45,7 +47,10 @@ class IrArray(Node):
         self.readings[index] = level * self.v_ref
 
     def publish(self):
-        self.analog_pub.publish(Float32MultiArray(data=self.readings))
+        # Noise is added here, not in on_image, so every published sample gets a fresh draw
+        noisy = [min(max(volts + random.gauss(0.0, self.noise_stddev), 0.0), self.v_ref)
+                 for volts in self.readings]
+        self.analog_pub.publish(Float32MultiArray(data=noisy))
 
 
 def main():

@@ -1,4 +1,5 @@
-# ros_gz_bridge config for ROS 2 Humble + Gazebo Fortress
+# Bridge entries every world needs: clock, commands, joint states, camera and IR array.
+# Odometry is bridged separately, see bridge_odom_raw.yaml and bridge_odom_ekf.yaml.
 # ROS topic names on the camera match the realsense2_camera driver so the same nodes run on sim and hardware.
 
 - ros_topic_name: "/clock"
@@ -15,18 +16,6 @@
   direction: ROS_TO_GZ
   subscriber_queue: 1
   publisher_queue: 1
-
-- ros_topic_name: "/odom"
-  gz_topic_name: "/odom"
-  ros_type_name: "nav_msgs/msg/Odometry"
-  gz_type_name: "ignition.msgs.Odometry"
-  direction: GZ_TO_ROS
-
-- ros_topic_name: "/tf"
-  gz_topic_name: "/tf"
-  ros_type_name: "tf2_msgs/msg/TFMessage"
-  gz_type_name: "ignition.msgs.Pose_V"
-  direction: GZ_TO_ROS
 
 - ros_topic_name: "/joint_states"
   gz_topic_name: "/joint_states"

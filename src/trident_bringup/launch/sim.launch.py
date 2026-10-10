@@ -37,7 +37,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('world', default_value='maze',
-                              description='World in trident_gazebo/worlds: maze, line or empty'),
+                              description='World in trident_gazebo/worlds: maze, line, empty or arena'),
         DeclareLaunchArgument('headless', default_value='false',
                               description='Run the Gazebo server without its GUI'),
         DeclareLaunchArgument('follow', default_value='false',

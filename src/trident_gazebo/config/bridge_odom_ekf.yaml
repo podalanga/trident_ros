@@ -1,0 +1,14 @@
+# Inputs for the EKF in trident_navigation, which then owns /odom and the
+# odom to base_footprint transform. Gazebo's own transform is left unbridged on purpose.
+
+- ros_topic_name: "/wheel/odom"
+  gz_topic_name: "/odom"
+  ros_type_name: "nav_msgs/msg/Odometry"
+  gz_type_name: "ignition.msgs.Odometry"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/imu"
+  gz_topic_name: "/imu"
+  ros_type_name: "sensor_msgs/msg/Imu"
+  gz_type_name: "ignition.msgs.IMU"
+  direction: GZ_TO_ROS

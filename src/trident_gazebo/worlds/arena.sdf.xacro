@@ -1,0 +1,334 @@
+<?xml version="1.0"?>
+<!--
+  Mission arena, 3.6 x 2.4 m. The robot spawns at the origin facing +X.
+
+    entry lane   x from -0.3 to 0.9   curved line from the origin through the doorway
+    room         x from  0.9 to 3.3   start square, three pick bays, three drop zones
+
+    left wall  (y = 1.8)   pick bays: a T on the floor, a coin past its crossbar, a QR on the wall
+    front wall (x = 3.3)   drop zones: a stem into a black square, a QR on the wall
+
+  Arguments:
+    pick_order   colours of bays 1 to 3, a permutation of RGB
+    drop_order   colours of drop zones 1 to 3, a permutation of RGB
+    obstacles    preset name from obstacle_presets below, or none
+    textures     folder holding the QR and wall images
+
+  Station poses in trident_mission/config/stations.yaml are derived from the dimensions here.
+  Change one and the other has to follow.
+-->
+<sdf version="1.8" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:arg name="pick_order" default="RGB"/>
+  <xacro:arg name="drop_order" default="BRG"/>
+  <xacro:arg name="obstacles" default="a"/>
+  <xacro:arg name="textures" default=""/>
+
+  <xacro:property name="PI" value="3.14159265358979"/>
+
+  <!-- field -->
+  <xacro:property name="x_min"        value="-0.3"/>
+  <xacro:property name="x_max"        value="3.3"/>
+  <xacro:property name="y_min"        value="-0.6"/>
+  <xacro:property name="y_max"        value="1.8"/>
+  <xacro:property name="wall_t"       value="0.02"/>
+  <xacro:property name="wall_h"       value="0.30"/>
+  <xacro:property name="door_x"       value="0.9"/>
+  <xacro:property name="door_y"       value="0.6"/>
+  <xacro:property name="door_w"       value="0.8"/>
+
+  <!-- floor markings. The IR channels are 15 mm apart, so a 12 mm line never covers two fully
+       and a 120 mm bar is wider than the whole 105 mm array. -->
+  <xacro:property name="line_w"       value="0.012"/>
+  <xacro:property name="marker_w"     value="0.120"/>
+  <xacro:property name="curve_r"      value="0.6"/>
+  <xacro:property name="curve_sweep"  value="${PI / 3}"/>
+  <xacro:property name="start_x"      value="1.46"/>
+
+  <!-- pick bays along the left wall, approached heading +Y -->
+  <xacro:property name="bay_xs"       value="${[1.5, 2.0, 2.5]}"/>
+  <xacro:property name="bay_stem_y0"  value="1.15"/>
+  <xacro:property name="bay_stem_len" value="0.30"/>
+  <xacro:property name="coin_ahead"   value="0.13"/>   <!-- crossbar to coin centre -->
+
+  <!-- drop zones along the front wall, approached heading +X -->
+  <xacro:property name="drop_ys"       value="${[0.7, 0.2, -0.3]}"/>
+  <xacro:property name="drop_stem_x0"  value="2.575"/>
+  <xacro:property name="drop_stem_len" value="0.30"/>
+  <xacro:property name="drop_size"     value="0.25"/>
+
+  <!-- coin: solid PLA, 40 mm across and 15 mm high -->
+  <xacro:property name="coin_r"       value="0.020"/>
+  <xacro:property name="coin_h"       value="0.015"/>
+  <xacro:property name="coin_mass"    value="0.0234"/>
+  <xacro:property name="coin_mu"      value="0.35"/>
+
+  <xacro:property name="qr_size"      value="0.16"/>
+  <xacro:property name="qr_z"         value="0.11"/>
+
+  <xacro:property name="obstacle_xy"  value="0.10"/>
+  <xacro:property name="obstacle_h"   value="0.15"/>
+  <!-- Box centres per preset. Keep them off the stems and the 0.3 m in front of each one. -->
+  <xacro:property name="obstacle_presets" value="${dict(
+      none=[],
+      a=[(1.90, 0.55), (1.75, -0.15)],
+      b=[(2.10, 0.45), (1.60, 0.10), (2.00, -0.35)],
+      c=[(1.75, 0.35), (2.15, 0.00)])}"/>
+
+  <xacro:property name="colour_names" value="${dict(R='red', G='green', B='blue')}"/>
+  <xacro:property name="colour_rgba"  value="${dict(R='0.85 0.10 0.10 1', G='0.10 0.65 0.15 1', B='0.10 0.25 0.85 1')}"/>
+
+  <!-- ============================ building blocks ============================ -->
+
+  <!-- Black paint: a thin visual with no collision -->
+  <xacro:macro name="paint" params="name x y sx sy yaw:=0">
+    <visual name="${name}">
+      <pose>${x} ${y} 0 0 0 ${yaw}</pose>
+      <geometry><box><size>${sx} ${sy} 0.0002</size></box></geometry>
+      <material>
+        <ambient>0.02 0.02 0.02 1</ambient>
+        <diffuse>0.02 0.02 0.02 1</diffuse>
+        <specular>0 0 0 1</specular>
+      </material>
+    </visual>
+  </xacro:macro>
+
+  <!-- Painted arc built from short straight pieces. Angles are measured at the arc centre. -->
+  <xacro:macro name="paint_arc" params="name cx cy r start sweep pieces:=30 i:=0">
+    <xacro:if value="${i &lt; pieces}">
+      <xacro:property name="angle" value="${start + (i + 0.5) * sweep / pieces}"/>
+      <xacro:paint name="${name}_${i}" x="${cx + r * cos(angle)}" y="${cy + r * sin(angle)}"
+                   sx="${1.2 * r * fabs(sweep) / pieces}" sy="${line_w}" yaw="${angle + PI / 2}"/>
+      <xacro:paint_arc name="${name}" cx="${cx}" cy="${cy}" r="${r}" start="${start}"
+                       sweep="${sweep}" pieces="${pieces}" i="${i + 1}"/>
+    </xacro:if>
+  </xacro:macro>
+
+  <xacro:macro name="wall" params="name x y sx sy texture">
+    <model name="${name}">
+      <static>true</static>
+      <pose>${x} ${y} ${wall_h / 2} 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>${sx} ${sy} ${wall_h}</size></box></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>${sx} ${sy} ${wall_h}</size></box></geometry>
+          <material>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <pbr><metal>
+              <albedo_map>$(arg textures)/wall_${texture}.png</albedo_map>
+              <roughness>1.0</roughness>
+              <metalness>0.0</metalness>
+            </metal></pbr>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </xacro:macro>
+
+  <!-- QR placard standing proud of a wall. At yaw 0 it faces -X (front wall),
+       at yaw 90 deg it faces -Y (left wall). -->
+  <xacro:macro name="qr_placard" params="name x y yaw colour">
+    <model name="${name}">
+      <static>true</static>
+      <pose>${x} ${y} ${qr_z} 0 0 ${yaw}</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.002 ${qr_size} ${qr_size}</size></box></geometry>
+          <material>
+            <diffuse>1 1 1 1</diffuse>
+            <specular>0 0 0 1</specular>
+            <pbr><metal>
+              <albedo_map>$(arg textures)/qr_${colour_names[colour]}.png</albedo_map>
+              <roughness>1.0</roughness>
+              <metalness>0.0</metalness>
+            </metal></pbr>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </xacro:macro>
+
+  <xacro:macro name="coin" params="x y colour">
+    <model name="coin_${colour_names[colour]}">
+      <pose>${x} ${y} ${coin_h / 2} 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>${coin_mass}</mass>
+          <inertia>
+            <ixx>${coin_mass * (3 * coin_r**2 + coin_h**2) / 12}</ixx>
+            <iyy>${coin_mass * (3 * coin_r**2 + coin_h**2) / 12}</iyy>
+            <izz>${coin_mass * coin_r**2 / 2}</izz>
+            <ixy>0</ixy><ixz>0</ixz><iyz>0</iyz>
+          </inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>${coin_r}</radius><length>${coin_h}</length></cylinder></geometry>
+          <surface><friction><ode><mu>${coin_mu}</mu><mu2>${coin_mu}</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>${coin_r}</radius><length>${coin_h}</length></cylinder></geometry>
+          <material>
+            <ambient>${colour_rgba[colour]}</ambient>
+            <diffuse>${colour_rgba[colour]}</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+  </xacro:macro>
+
+  <!-- Bay i: stem and crossbar go into the markings model, coin and QR are models of their own -->
+  <xacro:macro name="bay_paint" params="i">
+    <xacro:property name="x" value="${bay_xs[i]}"/>
+    <xacro:paint name="bay${i}_stem" x="${x}" y="${bay_stem_y0 + bay_stem_len / 2}"
+                 sx="${line_w}" sy="${bay_stem_len}"/>
+    <xacro:paint name="bay${i}_bar" x="${x}" y="${bay_stem_y0 + bay_stem_len}"
+                 sx="${marker_w}" sy="${line_w}"/>
+  </xacro:macro>
+
+  <xacro:macro name="bay_objects" params="i">
+    <xacro:property name="colour" value="${'$(arg pick_order)'[i]}"/>
+    <xacro:coin x="${bay_xs[i]}" y="${bay_stem_y0 + bay_stem_len + coin_ahead}" colour="${colour}"/>
+    <xacro:qr_placard name="bay${i}_qr" x="${bay_xs[i]}" y="${y_max - 0.001}" yaw="${PI / 2}"
+                      colour="${colour}"/>
+  </xacro:macro>
+
+  <xacro:macro name="drop_paint" params="i">
+    <xacro:property name="y" value="${drop_ys[i]}"/>
+    <xacro:paint name="drop${i}_stem" x="${drop_stem_x0 + drop_stem_len / 2}" y="${y}"
+                 sx="${drop_stem_len}" sy="${line_w}"/>
+    <xacro:paint name="drop${i}_square" x="${drop_stem_x0 + drop_stem_len + drop_size / 2}" y="${y}"
+                 sx="${drop_size}" sy="${drop_size}"/>
+  </xacro:macro>
+
+  <xacro:macro name="drop_objects" params="i">
+    <xacro:qr_placard name="drop${i}_qr" x="${x_max - 0.001}" y="${drop_ys[i]}" yaw="0"
+                      colour="${'$(arg drop_order)'[i]}"/>
+  </xacro:macro>
+
+  <!-- One box per entry of the chosen preset -->
+  <xacro:macro name="obstacles" params="boxes i:=0">
+    <xacro:if value="${i &lt; len(boxes)}">
+      <model name="obstacle_${i}">
+        <static>true</static>
+        <pose>${boxes[i][0]} ${boxes[i][1]} ${obstacle_h / 2} 0 0 0</pose>
+        <link name="link">
+          <collision name="collision">
+            <geometry><box><size>${obstacle_xy} ${obstacle_xy} ${obstacle_h}</size></box></geometry>
+          </collision>
+          <visual name="visual">
+            <geometry><box><size>${obstacle_xy} ${obstacle_xy} ${obstacle_h}</size></box></geometry>
+            <material>
+              <ambient>0.9 0.55 0.1 1</ambient>
+              <diffuse>0.9 0.55 0.1 1</diffuse>
+            </material>
+          </visual>
+        </link>
+      </model>
+      <xacro:obstacles boxes="${boxes}" i="${i + 1}"/>
+    </xacro:if>
+  </xacro:macro>
+
+  <!-- ============================ world ============================ -->
+
+  <world name="arena">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <plugin filename="ignition-gazebo-physics-system" name="ignition::gazebo::systems::Physics"/>
+    <plugin filename="ignition-gazebo-user-commands-system" name="ignition::gazebo::systems::UserCommands"/>
+    <plugin filename="ignition-gazebo-scene-broadcaster-system" name="ignition::gazebo::systems::SceneBroadcaster"/>
+    <!-- Required for the D435 and the IR array cameras -->
+    <plugin filename="ignition-gazebo-sensors-system" name="ignition::gazebo::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="ignition-gazebo-imu-system" name="ignition::gazebo::systems::Imu"/>
+
+    <!-- Even lighting and no shadows, so the IR readings do not depend on the robot's heading -->
+    <scene>
+      <ambient>1.0 1.0 1.0 1</ambient>
+      <background>0.7 0.7 0.7 1</background>
+      <shadows>false</shadows>
+    </scene>
+
+    <light type="directional" name="sun">
+      <cast_shadows>false</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <direction>0 0 -1</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>20 20</size></plane></geometry>
+          <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>20 20</size></plane></geometry>
+          <material>
+            <ambient>0.9 0.9 0.9 1</ambient>
+            <diffuse>0.9 0.9 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- outer walls, then the partition on both sides of the doorway -->
+    <xacro:property name="field_cx" value="${(x_min + x_max) / 2}"/>
+    <xacro:property name="field_cy" value="${(y_min + y_max) / 2}"/>
+    <xacro:property name="field_lx" value="${x_max - x_min + 2 * wall_t}"/>
+    <xacro:property name="field_ly" value="${y_max - y_min}"/>
+    <xacro:property name="door_lo"  value="${door_y - door_w / 2}"/>
+    <xacro:property name="door_hi"  value="${door_y + door_w / 2}"/>
+
+    <xacro:wall name="wall_right" x="${field_cx}" y="${y_min - wall_t / 2}" sx="${field_lx}" sy="${wall_t}" texture="0"/>
+    <xacro:wall name="wall_left"  x="${field_cx}" y="${y_max + wall_t / 2}" sx="${field_lx}" sy="${wall_t}" texture="1"/>
+    <xacro:wall name="wall_back"  x="${x_min - wall_t / 2}" y="${field_cy}" sx="${wall_t}" sy="${field_ly}" texture="2"/>
+    <xacro:wall name="wall_front" x="${x_max + wall_t / 2}" y="${field_cy}" sx="${wall_t}" sy="${field_ly}" texture="3"/>
+    <xacro:wall name="partition_right" x="${door_x}" y="${(y_min + door_lo) / 2}" sx="${wall_t}" sy="${door_lo - y_min}" texture="4"/>
+    <xacro:wall name="partition_left"  x="${door_x}" y="${(door_hi + y_max) / 2}" sx="${wall_t}" sy="${y_max - door_hi}" texture="5"/>
+
+    <model name="markings">
+      <static>true</static>
+      <pose>0 0 0.0003 0 0 0</pose>
+      <link name="link">
+        <!-- Entry line: a short straight, an S bend that moves it door_y to the left, then a
+             straight into the start square. -->
+        <xacro:property name="lead_in" value="0.15"/>
+        <xacro:property name="bend_dx" value="${curve_r * sin(curve_sweep)}"/>
+        <xacro:property name="bend_end_x" value="${lead_in + 2 * bend_dx}"/>
+        <xacro:paint name="entry_lead" x="${lead_in / 2}" y="0" sx="${lead_in}" sy="${line_w}"/>
+        <xacro:paint_arc name="entry_left" cx="${lead_in}" cy="${curve_r}" r="${curve_r}"
+                         start="${-PI / 2}" sweep="${curve_sweep}"/>
+        <xacro:paint_arc name="entry_right" cx="${bend_end_x}" cy="${door_y - curve_r}" r="${curve_r}"
+                         start="${PI / 2 + curve_sweep}" sweep="${-curve_sweep}"/>
+        <xacro:paint name="entry_run" x="${(bend_end_x + start_x) / 2}" y="${door_y}"
+                     sx="${start_x - bend_end_x}" sy="${line_w}"/>
+        <xacro:paint name="start_square" x="${start_x}" y="${door_y}" sx="${marker_w}" sy="${marker_w}"/>
+
+        <xacro:bay_paint i="0"/>
+        <xacro:bay_paint i="1"/>
+        <xacro:bay_paint i="2"/>
+        <xacro:drop_paint i="0"/>
+        <xacro:drop_paint i="1"/>
+        <xacro:drop_paint i="2"/>
+      </link>
+    </model>
+
+    <xacro:bay_objects i="0"/>
+    <xacro:bay_objects i="1"/>
+    <xacro:bay_objects i="2"/>
+    <xacro:drop_objects i="0"/>
+    <xacro:drop_objects i="1"/>
+    <xacro:drop_objects i="2"/>
+
+    <xacro:obstacles boxes="${obstacle_presets['$(arg obstacles)']}"/>
+  </world>
+</sdf>

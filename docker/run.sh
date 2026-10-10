@@ -23,7 +23,7 @@ Workspace:
 
 Robot:
   display               RViz with joint sliders, no simulation
-  sim [world] [args]    Gazebo + RViz. World is maze (default), line or empty
+  sim [world] [args]    Gazebo + RViz. World is maze (default), line, empty or arena
   teleop <xbox|ps4|generic> [device]
                         Joystick teleop. Device defaults to /dev/input/js0
 

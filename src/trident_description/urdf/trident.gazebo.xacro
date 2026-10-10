@@ -113,6 +113,29 @@
     </sensor>
   </gazebo>
 
+  <!-- == IMU: needs the Imu system plugin in the world (see arena.sdf.xacro).
+       Worlds without it simply get no /imu topic. == -->
+  <gazebo reference="imu_link">
+    <sensor name="imu" type="imu">
+      <always_on>true</always_on>
+      <update_rate>${imu_rate}</update_rate>
+      <topic>imu</topic>
+      <ignition_frame_id>imu_link</ignition_frame_id>
+      <imu>
+        <angular_velocity>
+            <x><noise type="gaussian"><mean>0</mean><stddev>${imu_gyro_noise}</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>${imu_gyro_noise}</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>${imu_gyro_noise}</stddev></noise></z>
+        </angular_velocity>
+        <linear_acceleration>
+            <x><noise type="gaussian"><mean>0</mean><stddev>${imu_accel_noise}</stddev></noise></x>
+            <y><noise type="gaussian"><mean>0</mean><stddev>${imu_accel_noise}</stddev></noise></y>
+            <z><noise type="gaussian"><mean>0</mean><stddev>${imu_accel_noise}</stddev></noise></z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+  </gazebo>
+
   <!-- == IR line sensor array: one tiny camera per channel, looking straight down.
        ir_sensor_frame has +X toward the floor, Y across the board, Z toward the front.
        trident_gazebo/scripts/ir_array.py turns the images into one analog reading per channel. == -->

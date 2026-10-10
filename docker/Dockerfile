@@ -1,4 +1,5 @@
-# ROS 2 Humble desktop (RViz included) with Gazebo Fortress and the teleop drivers
+# ROS 2 Humble desktop (RViz included) with Gazebo Fortress, the teleop drivers and the
+# autonomy stack: EKF odometry, RTAB-Map, Nav2 and a QR reader
 FROM osrf/ros:humble-desktop
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -10,6 +11,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-humble-joy-linux \
         ros-humble-teleop-twist-joy \
         ros-humble-depth-image-proc \
+        ros-humble-robot-localization \
+        ros-humble-rtabmap-ros \
+        ros-humble-navigation2 \
+        ros-humble-nav2-bringup \
+        ros-humble-nav2-simple-commander \
+        ros-humble-zbar-ros \
+        python3-qrcode \
+        python3-pytest \
         python3-colcon-common-extensions \
         liburdfdom-tools \
         mesa-utils \
