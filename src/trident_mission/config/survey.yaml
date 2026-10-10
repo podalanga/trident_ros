@@ -1,0 +1,12 @@
+# Route driven by the survey node to build the map. Poses are x, y, yaw in the map frame,
+# which starts at the spawn pose. Each stop ends with a full turn so the camera sees every wall.
+# The last stop is the start pose again, so the map closes its loop where it began.
+
+stops:
+  - [0.30, 0.60, 0.0]     # entry lane
+  - [1.50, 0.60, 0.0]     # just inside the door
+  - [2.20, 0.95, 0.0]     # between the pick bays and the drop zones
+  - [2.20, 0.00, 0.0]     # right half of the room
+  - [1.40, -0.10, 3.14]   # right rear corner
+  - [1.50, 0.60, 3.14]    # back to the door
+  - [0.00, 0.00, 0.0]     # start pose

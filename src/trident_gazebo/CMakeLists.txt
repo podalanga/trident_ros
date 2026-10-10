@@ -6,7 +6,7 @@ find_package(ament_cmake REQUIRED)
 install(DIRECTORY config launch textures worlds
   DESTINATION share/${PROJECT_NAME})
 
-install(PROGRAMS scripts/gripper_mimic.py scripts/ir_array.py
+install(PROGRAMS scripts/gripper_mimic.py scripts/ir_array.py scripts/referee.py
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

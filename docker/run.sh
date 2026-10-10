@@ -6,6 +6,8 @@ set -euo pipefail
 DOCKER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WS_DIR="$(dirname "$DOCKER_DIR")"
 SERVICE=trident
+# RTAB-Map database, inside the workspace so it survives the container
+MAP_DB=/ws/maps/arena.db
 
 usage() {
     cat <<USAGE
@@ -27,9 +29,15 @@ Robot:
   teleop <xbox|ps4|generic> [device]
                         Joystick teleop. Device defaults to /dev/input/js0
 
-Extra "name:=value" launch arguments can follow sim and teleop, for example:
+Autonomy (arena world):
+  map [args]            Drive the survey route and save the map to maps/arena.db
+  mission [args]        Line follow, then pick and place the three coins by QR colour
+  test                  Unit tests of the mission logic
+
+Extra "name:=value" launch arguments can follow sim, teleop, map and mission, for example:
   ./docker/run.sh sim empty rviz:=false
   ./docker/run.sh sim maze follow:=true follow_distance:=0.6 follow_height:=0.3
+  ./docker/run.sh mission pick_order:=GBR drop_order:=RGB obstacles:=b
 USAGE
 }
 
@@ -67,6 +75,12 @@ run_in_container() {
     else
         compose exec "$SERVICE" bash -ic "$*"
     fi
+}
+
+# Gazebo's server can outlive a launch that was stopped with Ctrl-C. A second simulation
+# next to it would publish a second clock, so clear any leftover before starting one.
+stop_stale_sim() {
+    run_in_container "pkill -f 'ign gazebo' || true"
 }
 
 host_only() {
@@ -115,6 +129,7 @@ case "$cmd" in
         run_in_container "ros2 launch trident_description display.launch.py"
         ;;
     sim)
+        stop_stale_sim
         world=maze
         # First argument is the world name unless it is already a launch argument
         if [ $# -gt 0 ] && [[ "$1" != *:=* ]]; then
@@ -139,6 +154,19 @@ case "$cmd" in
         fi
         run_in_container \
             "ros2 launch trident_teleop teleop.launch.py controller:=$controller joy_dev:=$joy_dev $*"
+        ;;
+    map)
+        stop_stale_sim
+        run_in_container \
+            "mkdir -p $(dirname "$MAP_DB") && ros2 launch trident_bringup mapping.launch.py database:=$MAP_DB $*"
+        ;;
+    mission)
+        stop_stale_sim
+        run_in_container "ros2 launch trident_bringup mission.launch.py database:=$MAP_DB $*"
+        ;;
+    test)
+        run_in_container "cd /ws && colcon test --base-paths src --packages-select trident_mission \
+            && colcon test-result --verbose"
         ;;
     help|-h|--help)
         usage

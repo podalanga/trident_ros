@@ -1,0 +1,8 @@
+# Drop squares as the referee sees them, in world coordinates.
+# These mirror drop_ys, drop_stem_x0, drop_stem_len and drop_size in worlds/arena.sdf.xacro.
+
+referee:
+  ros__parameters:
+    zone_x: 3.0                    # centre of every square along x
+    zone_ys: [0.7, 0.2, -0.3]      # centres of zones 1 to 3 along y
+    zone_size: 0.25

@@ -1,0 +1,13 @@
+# Where Nav2 hands the robot over to the line follower, in the map frame (x, y, yaw).
+# Each pose sits on the extension of a stem, 0.15 m short of its foot and facing along it.
+# These mirror the dimensions in trident_gazebo/worlds/arena.sdf.xacro.
+
+bays:
+  - {name: bay 1, x: 1.50, y: 1.00, yaw: 1.5708}
+  - {name: bay 2, x: 2.00, y: 1.00, yaw: 1.5708}
+  - {name: bay 3, x: 2.50, y: 1.00, yaw: 1.5708}
+
+drops:
+  - {name: drop 1, x: 2.40, y: 0.70, yaw: 0.0}
+  - {name: drop 2, x: 2.40, y: 0.20, yaw: 0.0}
+  - {name: drop 3, x: 2.40, y: -0.30, yaw: 0.0}

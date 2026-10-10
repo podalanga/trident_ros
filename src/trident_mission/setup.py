@@ -23,6 +23,8 @@ setup(
     entry_points={
         'console_scripts': [
             'line_follower = trident_mission.line_follower_node:main',
+            'survey = trident_mission.survey_node:main',
+            'mission = trident_mission.mission_node:main',
         ],
     },
 )

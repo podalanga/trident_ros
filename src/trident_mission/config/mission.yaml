@@ -12,3 +12,15 @@ line_follower:
     marker_channels: 6       # this many dark channels at once is a square or crossbar
     marker_samples: 2        # for this many samples in a row
     rate: 20.0               # Hz, same as the IR array
+
+mission:
+  ros__parameters:
+    entry_speed: 0.10          # along the entry line
+    entry_reach: 3.0           # give up if the start square has not turned up by then
+    dock_speed: 0.05           # on the stems, slow enough to stop on the marker
+    dock_reach: 0.60           # farthest to look for a marker from a station pose
+    dock_attempts: 2
+    qr_timeout: 4.0            # seconds
+    gripper_open: -1.0         # rad
+    gripper_closed: 0.09
+    gripper_travel_time: 1.0   # seconds for the jaws to swing fully

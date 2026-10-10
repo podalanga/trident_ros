@@ -12,6 +12,8 @@
   <exec_depend>trident_description</exec_depend>
   <exec_depend>trident_gazebo</exec_depend>
   <exec_depend>trident_teleop</exec_depend>
+  <exec_depend>trident_navigation</exec_depend>
+  <exec_depend>trident_mission</exec_depend>
   <exec_depend>rviz2</exec_depend>
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
