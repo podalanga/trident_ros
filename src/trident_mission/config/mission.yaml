@@ -1,0 +1,14 @@
+# Tunables for the mission nodes. Distances in metres, speeds in m/s and rad/s.
+
+line_follower:
+  ros__parameters:
+    speed: 0.10              # default forward speed, a goal may override it
+    kp: 45.0                 # rad/s per metre of line offset
+    kd: 2.0                  # rad/s per (m/s) of offset change
+    max_turn: 1.5
+    search_turn: 0.6         # turn rate used to swing back after the line slips off the array
+    min_darkness: 0.15       # readings lighter than this fraction are treated as floor
+    dark_level: 0.5          # fraction that counts a channel as fully on black
+    marker_channels: 6       # this many dark channels at once is a square or crossbar
+    marker_samples: 2        # for this many samples in a row
+    rate: 20.0               # Hz, same as the IR array

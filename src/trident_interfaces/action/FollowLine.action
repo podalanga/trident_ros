@@ -1,0 +1,11 @@
+# Follow the floor line under the IR array until a marker (a patch or bar wide enough to
+# darken the whole array) or until max_distance has been driven.
+
+float32 max_distance     # metres, give up after this much travel
+float32 speed            # m/s, 0 uses the follower's default
+---
+bool reached_marker      # false when the distance ran out first
+float32 distance         # metres actually driven
+---
+float32 offset           # metres, line position left (+) or right (-) of the array centre
+float32 distance
