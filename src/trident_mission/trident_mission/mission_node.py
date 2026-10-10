@@ -88,9 +88,7 @@ class Mission(Node):
             if zone is None:
                 # Holding a coin with no known home: set it down here and move on
                 self.get_logger().warn(f'{bay.name}: no drop zone known for {colour}')
-                self.docking.gripper.open()
-                self.docking.retreat(0.15)
-                self.docking.gripper.close()
+                self.docking.release(back_off=0.15)
                 continue
             self.enter('DROP', f'{colour} coin to {zone.name}')
             if self.docking.drop(zone):

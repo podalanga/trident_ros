@@ -72,11 +72,13 @@ class Docking:
             self.gripper.close()
             return None
         colour = self.qr.read(self.settings.qr_timeout)
-        if colour is not None:
-            self.gripper.close()
-        self.retreat(distance)
         if colour is None:
+            # Back out with the jaws still open so the coin stays in its bay
+            self.retreat(distance)
             self.gripper.close()
+            return None
+        self.gripper.close()
+        self.retreat(distance)
         return colour
 
     def drop(self, zone: Station) -> bool:
@@ -84,7 +86,11 @@ class Docking:
         distance = self.approach(zone)
         if distance is None:
             return False
-        self.gripper.open()
-        self.retreat(distance)
-        self.gripper.close()
+        self.release(back_off=distance)
         return True
+
+    def release(self, back_off: float):
+        """Let go of the coin where the robot stands and back away from it."""
+        self.gripper.open()
+        self.retreat(back_off)
+        self.gripper.close()
