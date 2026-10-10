@@ -27,28 +27,37 @@ src/
 In a second terminal, with the controller plugged in:
 
 ```bash
-./docker/run.sh teleop xbox                    # or ps4
+./docker/run.sh teleop xbox                    # or ps4, or generic
 ./docker/run.sh teleop ps4 /dev/input/js1      # if the pad is not js0
 ```
 
-Other commands: `display` (RViz with joint sliders), `sim empty`, `shell`, `clean`, `down`.
+Other commands: `display` (RViz with joint sliders), `sim line`, `sim empty`, `shell`, `clean`, `down`.
 `./docker/run.sh help` lists them all. Inside the container shell the same script is at
 `/ws/docker/run.sh`, and plain `ros2 launch` works as well.
 
 ## Controls
 
-| Action | Xbox | PS4 |
-|---|---|---|
-| Enable driving (hold) | LB | L1 |
-| Turbo (hold) | RB | R1 |
-| Forward / back | left stick | left stick |
-| Turn | right stick | right stick |
-| Close gripper | A | Cross |
-| Open gripper | B | Circle |
+| Action | Xbox | PS4 | Generic |
+|---|---|---|---|
+| Enable driving (hold) | LB | L1 | LB / L1 |
+| Turbo (hold) | RB | R1 | RB / R1 |
+| Forward / back | left stick | left stick | left stick |
+| Turn | right stick | right stick | right stick |
+| Close gripper | A | Cross | A |
+| Open gripper | B | Circle | B |
 
 Normal speed is 0.2 m/s and 1.5 rad/s, turbo is 0.5 m/s and 3.0 rad/s.
-Mappings live in `src/trident_teleop/config/`. If a button does something unexpected,
-check the indices with `ros2 topic echo /joy`.
+
+Which mapping to pick depends on how Linux sees the pad, not on the brand printed on it:
+
+- `xbox`: Xbox pads on USB or the Xbox wireless dongle (xpad driver, 11 buttons).
+- `ps4`: DualShock 4 on USB or Bluetooth.
+- `generic`: SHANWAN, 8BitDo and other Android mode pads, and Xbox pads over Bluetooth
+  (generic HID layout, 14 or 15 buttons).
+
+If the gripper buttons work but the robot does not drive, the mapping is the wrong one: the
+enable button sits on a different index. Check with `ros2 topic echo /joy` while pressing LB.
+Mappings live in `src/trident_teleop/config/`.
 
 ## Launch files
 
@@ -69,16 +78,18 @@ check the indices with `ros2 topic echo /joy`.
 | `/gripper/command` | std_msgs/Float64, drive jaw angle in rad (-1.0 open, 0.09 closed) |
 | `/camera/color/image_raw`, `/camera/color/camera_info` | D435 colour |
 | `/camera/depth/image_rect_raw` | D435 depth |
-| `/camera/depth/color/points` | point cloud |
+| `/camera/depth/color/points` | point cloud, built from the depth image in the optical frame |
+| `/ir/analog` | std_msgs/Float32MultiArray, 8 IR line sensor voltages (0 V dark to 5 V white) |
 
 ## Worlds
 
 - `maze` (default): 20 x 20 m walled arena with box obstacles, taken from the TurtleBot 4
   simulator (Apache-2.0). Good for obstacle avoidance tests.
+- `line`: light floor with a black 20 mm line loop, for the IR line sensor array.
 - `empty`: ground plane and one box in front of the robot.
 
 Add a new world by dropping `<name>.sdf` into `src/trident_gazebo/worlds/` and rebuilding.
-It needs the Sensors system plugin for the camera to work (see `empty.sdf`).
+It needs the Sensors system plugin for the cameras and the IR array to work (see `empty.sdf`).
 
 ## GPU
 

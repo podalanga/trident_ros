@@ -7,11 +7,14 @@
   gz_type_name: "ignition.msgs.Clock"
   direction: GZ_TO_ROS
 
+# Commands keep a queue of 1 so only the newest one is used, never a stale backlog
 - ros_topic_name: "/cmd_vel"
   gz_topic_name: "/cmd_vel"
   ros_type_name: "geometry_msgs/msg/Twist"
   gz_type_name: "ignition.msgs.Twist"
   direction: ROS_TO_GZ
+  subscriber_queue: 1
+  publisher_queue: 1
 
 - ros_topic_name: "/odom"
   gz_topic_name: "/odom"
@@ -36,12 +39,16 @@
   ros_type_name: "std_msgs/msg/Float64"
   gz_type_name: "ignition.msgs.Double"
   direction: ROS_TO_GZ
+  subscriber_queue: 1
+  publisher_queue: 1
 
 - ros_topic_name: "/gripper/follower_cmd"
   gz_topic_name: "/gripper/follower_cmd"
   ros_type_name: "std_msgs/msg/Float64"
   gz_type_name: "ignition.msgs.Double"
   direction: ROS_TO_GZ
+  subscriber_queue: 1
+  publisher_queue: 1
 
 - ros_topic_name: "/camera/color/image_raw"
   gz_topic_name: "/camera/image"
@@ -61,8 +68,53 @@
   gz_type_name: "ignition.msgs.Image"
   direction: GZ_TO_ROS
 
-- ros_topic_name: "/camera/depth/color/points"
-  gz_topic_name: "/camera/points"
-  ros_type_name: "sensor_msgs/msg/PointCloud2"
-  gz_type_name: "ignition.msgs.PointCloudPacked"
+# The point cloud is built in ROS from the depth image (depth_image_proc), not bridged.
+
+# IR line sensor array, one small image per channel. ir_array.py reads these.
+- ros_topic_name: "/ir/raw/ch0"
+  gz_topic_name: "/ir/ch0"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/ir/raw/ch1"
+  gz_topic_name: "/ir/ch1"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/ir/raw/ch2"
+  gz_topic_name: "/ir/ch2"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/ir/raw/ch3"
+  gz_topic_name: "/ir/ch3"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/ir/raw/ch4"
+  gz_topic_name: "/ir/ch4"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/ir/raw/ch5"
+  gz_topic_name: "/ir/ch5"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/ir/raw/ch6"
+  gz_topic_name: "/ir/ch6"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  direction: GZ_TO_ROS
+
+- ros_topic_name: "/ir/raw/ch7"
+  gz_topic_name: "/ir/ch7"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
   direction: GZ_TO_ROS

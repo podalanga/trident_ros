@@ -2,6 +2,7 @@
 
 ros2 launch trident_teleop teleop.launch.py controller:=xbox
 ros2 launch trident_teleop teleop.launch.py controller:=ps4 joy_dev:=/dev/input/js1
+ros2 launch trident_teleop teleop.launch.py controller:=generic
 """
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -18,7 +19,8 @@ def generate_launch_description():
         [share, 'config', [LaunchConfiguration('controller'), '.yaml']])
 
     return LaunchDescription([
-        DeclareLaunchArgument('controller', default_value='xbox', choices=['xbox', 'ps4'],
+        DeclareLaunchArgument('controller', default_value='xbox',
+                              choices=['xbox', 'ps4', 'generic'],
                               description='Which controller mapping to load'),
         DeclareLaunchArgument('joy_dev', default_value='/dev/input/js0',
                               description='Joystick device, see ls /dev/input/js*'),

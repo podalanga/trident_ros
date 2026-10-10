@@ -31,8 +31,10 @@
       <right_joint>right_wheel_joint</right_joint>
       <wheel_separation>${2*wheel_y}</wheel_separation>
       <wheel_radius>${wheel_radius}</wheel_radius>
-      <max_linear_acceleration>1.0</max_linear_acceleration>
-      <max_angular_acceleration>4.0</max_angular_acceleration>
+      <max_linear_acceleration>${drive_accel_linear}</max_linear_acceleration>
+      <min_linear_acceleration>${-drive_accel_linear}</min_linear_acceleration>
+      <max_angular_acceleration>${drive_accel_angular}</max_angular_acceleration>
+      <min_angular_acceleration>${-drive_accel_angular}</min_angular_acceleration>
       <topic>cmd_vel</topic>
       <odom_topic>odom</odom_topic>
       <tf_topic>tf</tf_topic>
@@ -74,20 +76,22 @@
   </gazebo>
 
   <!-- == D435: RGB-D sensor on the depth origin, looking along +X.
-       Depth FOV 87 deg x 58 deg at 848 x 480. Near clip 0.1 m keeps the holder lip out of view.
-       Messages are stamped with the optical frame so point clouds line up in RViz. == -->
+       Depth FOV 87 deg x 58 deg. Near clip 0.1 m keeps the holder lip out of view.
+       Images are stamped with the optical frame. Gazebo's own point cloud is not used: it has
+       X forward but carries the same optical frame id, so the cloud is built in ROS from the
+       depth image instead (see trident_gazebo sim.launch.py). == -->
   <gazebo reference="camera_depth_frame">
     <sensor name="d435" type="rgbd_camera">
       <always_on>true</always_on>
-      <update_rate>30</update_rate>
+      <update_rate>${d435_rate}</update_rate>
       <visualize>false</visualize>
       <topic>camera</topic>
       <ignition_frame_id>camera_depth_optical_frame</ignition_frame_id>
       <camera>
         <horizontal_fov>1.5184</horizontal_fov>
         <image>
-          <width>848</width>
-          <height>480</height>
+          <width>${d435_width}</width>
+          <height>${d435_height}</height>
           <format>R8G8B8</format>
         </image>
         <clip>
@@ -108,5 +112,43 @@
       </camera>
     </sensor>
   </gazebo>
+
+  <!-- == IR line sensor array: one tiny camera per channel, looking straight down.
+       ir_sensor_frame has +X toward the floor, Y across the board, Z toward the front.
+       trident_gazebo/scripts/ir_array.py turns the images into one analog reading per channel. == -->
+  <xacro:macro name="ir_channel" params="index">
+    <gazebo reference="ir_sensor_frame">
+      <sensor name="ir_ch${index}" type="camera">
+        <!-- 1 mm below the board face, offset along the row -->
+        <pose>0.001 ${ir_center_y + (index - (ir_channels - 1) / 2.0) * ir_pitch} ${ir_center_x} 0 0 0</pose>
+        <always_on>true</always_on>
+        <update_rate>${ir_rate}</update_rate>
+        <visualize>false</visualize>
+        <topic>ir/ch${index}</topic>
+        <camera>
+          <!-- about an 8 mm spot on the floor from 7 mm up, like a reflectance sensor -->
+          <horizontal_fov>1.0</horizontal_fov>
+          <image>
+            <width>8</width>
+            <height>8</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.002</near>
+            <far>0.1</far>
+          </clip>
+        </camera>
+      </sensor>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- xacro has no for loop, so the macro calls itself until the last channel -->
+  <xacro:macro name="ir_array" params="index:=0">
+    <xacro:if value="${index &lt; ir_channels}">
+      <xacro:ir_channel index="${index}"/>
+      <xacro:ir_array index="${index + 1}"/>
+    </xacro:if>
+  </xacro:macro>
+  <xacro:ir_array/>
 
 </robot>

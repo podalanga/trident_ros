@@ -4,7 +4,7 @@
 joy_node:
   ros__parameters:
     deadzone: 0.1
-    autorepeat_rate: 20.0   # keeps /cmd_vel flowing while a stick is held still
+    autorepeat_rate: 30.0   # keeps /cmd_vel flowing while a stick is held still
     dev_ff: ""              # no rumble, so no event device is opened
 
 teleop_twist_joy_node:

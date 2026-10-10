@@ -33,13 +33,14 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('world', default_value='maze',
-                              description='World name in trident_gazebo/worlds (maze or empty)'),
+                              description='World in trident_gazebo/worlds: maze, line or empty'),
         DeclareLaunchArgument('headless', default_value='false',
                               description='Run the Gazebo server without its GUI'),
         DeclareLaunchArgument('rviz', default_value='true', description='Open RViz'),
         DeclareLaunchArgument('teleop', default_value='false',
                               description='Start joystick teleop with the simulation'),
-        DeclareLaunchArgument('controller', default_value='xbox', choices=['xbox', 'ps4'],
+        DeclareLaunchArgument('controller', default_value='xbox',
+                              choices=['xbox', 'ps4', 'generic'],
                               description='Controller mapping used when teleop is on'),
         DeclareLaunchArgument('joy_dev', default_value='/dev/input/js0',
                               description='Joystick device used when teleop is on'),

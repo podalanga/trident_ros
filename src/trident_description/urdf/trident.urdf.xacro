@@ -26,6 +26,10 @@
   <!-- N20 gearmotor: placeholders for a 300 rpm / 6 V variant. Replace with your motor's datasheet values. -->
   <xacro:property name="wheel_effort"     value="0.05"/>      <!-- N m, stall torque at the wheel -->
   <xacro:property name="wheel_velocity"   value="31.4"/>      <!-- rad/s, no-load speed (300 rpm) -->
+  <!-- Acceleration limits for the diff drive, applied to speeding up and to braking.
+       Without the braking limit the wheels stop dead and the robot skids and yaws. -->
+  <xacro:property name="drive_accel_linear"  value="1.0"/>    <!-- m/s^2 -->
+  <xacro:property name="drive_accel_angular" value="8.0"/>    <!-- rad/s^2 -->
 
   <!-- Caster: dome radius 10.5 mm, centre at castor_wheel_sphere_coords.
        In CAD the dome bottom sits 0.74 mm above the wheel contact plane. The collision radius
@@ -50,6 +54,19 @@
   <!-- Depth origin = left IR imager: 4.2 mm behind the front glass, 17.5 mm toward the camera's left (+Y) -->
   <xacro:property name="d435_depth_x"     value="${d435_len_x - 0.0042}"/>
   <xacro:property name="d435_depth_y"     value="${d435_center_y + 0.0175}"/>
+  <!-- Simulated stream. 1920 x 1080 at 60 Hz is beyond what a real D435 does (depth tops out at
+       1280 x 720, 30 Hz) and is heavy to render. Lower these three first if the sim runs slow,
+       for example 424 x 240 at 15 Hz. -->
+  <xacro:property name="d435_width"       value="1920"/>
+  <xacro:property name="d435_height"      value="1080"/>
+  <xacro:property name="d435_rate"        value="60"/>
+
+  <!-- IR line sensor array: channels sit in a row across the board (along Y) -->
+  <xacro:property name="ir_channels"      value="8"/>
+  <xacro:property name="ir_pitch"         value="0.015"/>     <!-- m, centre to centre -->
+  <xacro:property name="ir_center_y"      value="0.0007"/>    <!-- board centre in ir_base_link -->
+  <xacro:property name="ir_center_x"      value="-0.008"/>
+  <xacro:property name="ir_rate"          value="20"/>        <!-- Hz -->
 
   <!-- ============================ base ============================ -->
 
@@ -151,9 +168,10 @@
 
   <link name="gripper_drive_link">
     <inertial>
-      <origin xyz="0.037012 0.035574 0" rpy="0 0 0"/>
-      <mass value="0.029369"/>
-      <inertia ixx="3.2335E-06" ixy="3.1111E-06" ixz="0" iyy="2.6949E-05" iyz="0" izz="2.987E-05"/>
+      <!-- PLA, 1240 kg/m3, computed from the mesh (11.81 cm3) -->
+      <origin xyz="0.03072 -0.01303 0" rpy="0 0 0"/>
+      <mass value="0.014648"/>
+      <inertia ixx="1.7643E-06" ixy="2.1546E-06" ixz="0" iyy="1.3239E-05" iyz="0" izz="1.4847E-05"/>
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -178,9 +196,10 @@
   <link name="gripper_follower_link">
     <inertial>
       <origin xyz="0.0233005821511302 0.00658223410359155 -0.00252490161223871" rpy="0 0 0"/>
-      <mass value="0.0210562573264184"/>
-      <inertia ixx="2.44538134970393E-06" ixy="-1.90484190620614E-06" ixz="1.21407959125207E-06"
-               iyy="1.91707326281041E-05" iyz="3.43006008331818E-07" izz="2.06767405330995E-05"/>
+      <!-- PLA, 1240 kg/m3, computed from the mesh (16.29 cm3) -->
+      <mass value="0.020201"/>
+      <inertia ixx="2.3362E-06" ixy="-1.8337E-06" ixz="1.1640E-06"
+               iyy="1.8337E-05" iyz="3.2888E-07" izz="1.9772E-05"/>
     </inertial>
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0"/>

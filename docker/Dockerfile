@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         ros-humble-joint-state-publisher-gui \
         ros-humble-joy-linux \
         ros-humble-teleop-twist-joy \
+        ros-humble-depth-image-proc \
         python3-colcon-common-extensions \
         liburdfdom-tools \
         mesa-utils \

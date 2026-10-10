@@ -4,15 +4,15 @@
 
   Source:  https://github.com/turtlebot/turtlebot4_simulator (branch humble,
            turtlebot4_ignition_bringup/worlds/maze.sdf), Apache-2.0 licence.
-  Changes: physics step 3 ms to 1 ms (the robot has 22 mm wheels),
-           Sensors system added so the D435 camera renders.
+  Changes: physics step 3 ms to 2 ms (the robot has 22 mm wheels),
+           Sensors system added so the cameras render.
 -->
 <sdf version='1.8'>
     <world name='maze'>
-        <physics name='1ms' type='ignored'>
-            <max_step_size>0.001</max_step_size>
+        <physics name='2ms' type='ignored'>
+            <max_step_size>0.002</max_step_size>
             <real_time_factor>1</real_time_factor>
-            <real_time_update_rate>1000</real_time_update_rate>
+            <real_time_update_rate>500</real_time_update_rate>
         </physics>
         <plugin name='ignition::gazebo::systems::Physics' filename='ignition-gazebo-physics-system' />
         <plugin name='ignition::gazebo::systems::UserCommands' filename='ignition-gazebo-user-commands-system' />

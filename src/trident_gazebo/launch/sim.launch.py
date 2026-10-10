@@ -1,7 +1,7 @@
 """Gazebo Fortress simulation of the trident robot (no RViz, no teleop).
 
 ros2 launch trident_gazebo sim.launch.py
-ros2 launch trident_gazebo sim.launch.py world:=empty
+ros2 launch trident_gazebo sim.launch.py world:=line
 ros2 launch trident_gazebo sim.launch.py x:=-9.0 y:=-9.0 headless:=true
 """
 import os
@@ -40,7 +40,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument('world', default_value='maze',
-                              description='World name in trident_gazebo/worlds (maze or empty)'),
+                              description='World in trident_gazebo/worlds: maze, line or empty'),
         DeclareLaunchArgument('x', default_value='0.0', description='Spawn x in metres'),
         DeclareLaunchArgument('y', default_value='0.0', description='Spawn y in metres'),
         DeclareLaunchArgument('yaw', default_value='0.0', description='Spawn heading in radians'),
@@ -62,6 +62,16 @@ def generate_launch_description():
         Node(package='ros_gz_bridge', executable='parameter_bridge', output='screen',
              parameters=[{'config_file': bridge_cfg, 'use_sim_time': True}]),
 
-        Node(package='trident_gazebo', executable='gripper_mimic.py', output='screen',
-             parameters=[{'use_sim_time': True}]),
+        # These two do not use time, so they stay off the 1 kHz /clock topic
+        Node(package='trident_gazebo', executable='gripper_mimic.py', output='screen'),
+
+        Node(package='trident_gazebo', executable='ir_array.py', output='screen'),
+
+        # Coloured point cloud from the depth image, in the optical frame like a real RealSense
+        Node(package='depth_image_proc', executable='point_cloud_xyzrgb_node', output='screen',
+             parameters=[{'use_sim_time': True}],
+             remappings=[('rgb/camera_info', '/camera/color/camera_info'),
+                         ('rgb/image_rect_color', '/camera/color/image_raw'),
+                         ('depth_registered/image_rect', '/camera/depth/image_rect_raw'),
+                         ('points', '/camera/depth/color/points')]),
     ])

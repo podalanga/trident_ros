@@ -23,8 +23,8 @@ Workspace:
 
 Robot:
   display               RViz with joint sliders, no simulation
-  sim [world] [args]    Gazebo + RViz. World is maze (default) or empty
-  teleop <xbox|ps4> [device]
+  sim [world] [args]    Gazebo + RViz. World is maze (default), line or empty
+  teleop <xbox|ps4|generic> [device]
                         Joystick teleop. Device defaults to /dev/input/js0
 
 Extra "name:=value" launch arguments can follow sim and teleop, for example:
@@ -124,11 +124,13 @@ case "$cmd" in
         ;;
     teleop)
         controller="${1:-}"
-        if [ "$controller" != xbox ] && [ "$controller" != ps4 ]; then
-            echo "Pick a controller: ./docker/run.sh teleop <xbox|ps4> [device]" >&2
-            exit 1
-        fi
-        shift
+        case "$controller" in
+            xbox|ps4|generic) shift ;;
+            *)
+                echo "Pick a controller: ./docker/run.sh teleop <xbox|ps4|generic> [device]" >&2
+                exit 1
+                ;;
+        esac
         joy_dev=/dev/input/js0
         if [ $# -gt 0 ] && [[ "$1" != *:=* ]]; then
             joy_dev="$1"
