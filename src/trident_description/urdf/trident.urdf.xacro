@@ -1,0 +1,314 @@
+<?xml version="1.0"?>
+<!--
+  trident: hand-maintained model built on the SolidWorks export of bot_v2_chassis_v6.
+
+  The raw SolidWorks export is not part of this repo.
+  Inertials, joint origins and meshes are copied from it. Changes relative to the export:
+    - base_footprint added (REP-105), base_link stays at the axle midpoint
+    - wheel axes flipped to 0 1 0 so +rotation drives the robot forward (+X)
+    - right wheel origin made coaxial with the left wheel (export had a 0.5 mm z offset)
+    - primitive collisions: wheel cylinders, caster sphere, chassis plate box
+    - gripper limits, effort, velocity, damping filled in (export had all zeros)
+    - follower limits mirrored for the mimic joint
+    - D435 body added (only the holder was in the CAD), depth + optical frames added
+    - IR array given a nonzero mass (export had 0), IR joint renamed, downward sensor frame added
+  All geometry in metres, angles in radians, frames per REP-103.
+-->
+<robot name="trident" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:property name="pkg" value="package://trident_description/meshes"/>
+  <xacro:property name="PI" value="3.14159265358979"/>
+
+  <!-- Drive wheels (measured from the exported wheel mesh) -->
+  <xacro:property name="wheel_radius"     value="0.022"/>
+  <xacro:property name="wheel_width"      value="0.00666"/>
+  <xacro:property name="wheel_y"          value="0.09777"/>   <!-- separation = 2 * wheel_y = 0.19554 -->
+  <!-- N20 gearmotor: placeholders for a 300 rpm / 6 V variant. Replace with your motor's datasheet values. -->
+  <xacro:property name="wheel_effort"     value="0.05"/>      <!-- N m, stall torque at the wheel -->
+  <xacro:property name="wheel_velocity"   value="31.4"/>      <!-- rad/s, no-load speed (300 rpm) -->
+
+  <!-- Caster: dome radius 10.5 mm, centre at castor_wheel_sphere_coords.
+       In CAD the dome bottom sits 0.74 mm above the wheel contact plane. The collision radius
+       below is chosen so the sphere touches z = 0 exactly; fix the physical part to match. -->
+  <xacro:property name="caster_xyz_x"     value="0.084973"/>
+  <xacro:property name="caster_xyz_z"     value="-0.01076"/>
+  <xacro:property name="caster_radius"    value="${wheel_radius + caster_xyz_z}"/>  <!-- 0.01124 -->
+
+  <!-- Gripper, MG995 at 4.8 V: 8.5 kg cm, 0.20 s/60 deg -->
+  <xacro:property name="grip_lower"       value="-1.0"/>      <!-- rad, opening (jaws clear the chassis to beyond -1.5) -->
+  <xacro:property name="grip_upper"       value="0.09"/>      <!-- rad, closing; jaws touch each other at ~0.096 -->
+  <xacro:property name="grip_effort"      value="0.83"/>      <!-- N m -->
+  <xacro:property name="grip_velocity"    value="5.2"/>       <!-- rad/s -->
+  <xacro:property name="grip_damping"     value="0.005"/>
+
+  <!-- D435 in the holder. camera_link = holder pocket floor centre, camera back rests on it, lens faces +X. -->
+  <xacro:property name="d435_len_x"       value="0.025"/>
+  <xacro:property name="d435_len_y"       value="0.090"/>
+  <xacro:property name="d435_len_z"       value="0.025"/>
+  <xacro:property name="d435_mass"        value="0.072"/>
+  <xacro:property name="d435_center_y"    value="0.00025"/>   <!-- pocket end wall at y = 45.25 mm -->
+  <!-- Depth origin = left IR imager: 4.2 mm behind the front glass, 17.5 mm toward the camera's left (+Y) -->
+  <xacro:property name="d435_depth_x"     value="${d435_len_x - 0.0042}"/>
+  <xacro:property name="d435_depth_y"     value="${d435_center_y + 0.0175}"/>
+
+  <!-- ============================ base ============================ -->
+
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+    <origin xyz="0 0 ${wheel_radius}" rpy="0 0 0"/>
+  </joint>
+
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0.050247510628613 -0.00550934888470665 0.0135868978977812" rpy="0 0 0"/>
+      <mass value="0.425561953955461"/>
+      <inertia ixx="0.000502791654862014" ixy="-4.44137980517146E-06" ixz="2.17973091122719E-07"
+               iyy="0.000538550555524092" iyz="-8.95288854408929E-09" izz="0.00102844541313249"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${pkg}/base_link.STL"/></geometry>
+      <material name="chassis_grey"><color rgba="0.698 0.698 0.698 1"/></material>
+    </visual>
+    <!-- Chassis plate: 180 x 150 x 6 mm, top face at z = +11 mm above the axle -->
+    <collision name="plate">
+      <origin xyz="0.073 0 0.008" rpy="0 0 0"/>
+      <geometry><box size="0.180 0.150 0.006"/></geometry>
+    </collision>
+    <!-- Electronics boxes and servo on top of the plate (coarse) -->
+    <collision name="top_volume">
+      <origin xyz="0.073 0 0.0185" rpy="0 0 0"/>
+      <geometry><box size="0.180 0.110 0.015"/></geometry>
+    </collision>
+  </link>
+
+  <!-- ============================ wheels ============================ -->
+
+  <xacro:macro name="drive_wheel" params="side y">
+    <link name="${side}_wheel_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="0.01008"/>
+        <inertia ixx="1.2626E-06" ixy="0" ixz="0" iyy="2.4506E-06" iyz="0" izz="1.2626E-06"/>
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><mesh filename="${pkg}/${side}_wheel_link.STL"/></geometry>
+        <material name="wheel_black"><color rgba="0.298 0.298 0.298 1"/></material>
+      </visual>
+      <collision>
+        <!-- cylinder axis (z) rotated onto the joint axis (y) -->
+        <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+        <geometry><cylinder radius="${wheel_radius}" length="${wheel_width}"/></geometry>
+      </collision>
+    </link>
+
+    <joint name="${side}_wheel_joint" type="continuous">
+      <parent link="base_link"/>
+      <child link="${side}_wheel_link"/>
+      <origin xyz="0 ${y} 0" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <limit effort="${wheel_effort}" velocity="${wheel_velocity}"/>
+      <dynamics damping="0.0001" friction="0"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:drive_wheel side="left"  y="${wheel_y}"/>
+  <xacro:drive_wheel side="right" y="${-wheel_y}"/>
+
+  <!-- ============================ caster ============================ -->
+
+  <link name="castor_ball">
+    <inertial>
+      <origin xyz="0 0 0.003155" rpy="0 0 0"/>
+      <mass value="0.0089358"/>
+      <inertia ixx="6.2755E-07" ixy="0" ixz="0" iyy="6.2755E-07" iyz="0" izz="5.9168E-07"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${pkg}/castor_ball.STL"/></geometry>
+      <material name="chassis_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><sphere radius="${caster_radius}"/></geometry>
+    </collision>
+  </link>
+
+  <joint name="castor_ball_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="castor_ball"/>
+    <origin xyz="${caster_xyz_x} 0 ${caster_xyz_z}" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ============================ gripper ============================ -->
+  <!-- Drive gear (right_arm, servo side) at y = -12.5 mm. Positive rotation about +Z closes the jaws.
+       Zero = the pose the assembly was exported in. Note: in that pose the follower jaw is 7.25 deg
+       off the mirror image of the drive jaw, so the jaws meet slightly off the centreline. -->
+
+  <link name="gripper_drive_link">
+    <inertial>
+      <origin xyz="0.037012 0.035574 0" rpy="0 0 0"/>
+      <mass value="0.029369"/>
+      <inertia ixx="3.2335E-06" ixy="3.1111E-06" ixz="0" iyy="2.6949E-05" iyz="0" izz="2.987E-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${pkg}/gripper_drive_link.STL"/></geometry>
+      <material name="chassis_grey"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${pkg}/gripper_drive_link.STL"/></geometry>
+    </collision>
+  </link>
+
+  <joint name="gripper_drive_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="gripper_drive_link"/>
+    <origin xyz="0.11997 -0.0125 -0.00985" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <limit lower="${grip_lower}" upper="${grip_upper}" effort="${grip_effort}" velocity="${grip_velocity}"/>
+    <dynamics damping="${grip_damping}" friction="0"/>
+  </joint>
+
+  <link name="gripper_follower_link">
+    <inertial>
+      <origin xyz="0.0233005821511302 0.00658223410359155 -0.00252490161223871" rpy="0 0 0"/>
+      <mass value="0.0210562573264184"/>
+      <inertia ixx="2.44538134970393E-06" ixy="-1.90484190620614E-06" ixz="1.21407959125207E-06"
+               iyy="1.91707326281041E-05" iyz="3.43006008331818E-07" izz="2.06767405330995E-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${pkg}/gripper_follower_link.STL"/></geometry>
+      <material name="jaw_white"><color rgba="1 1 1 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${pkg}/gripper_follower_link.STL"/></geometry>
+    </collision>
+  </link>
+
+  <joint name="gripper_follower_joint" type="revolute">
+    <parent link="base_link"/>
+    <child link="gripper_follower_link"/>
+    <origin xyz="0.11997 0.0125 -0.00485" rpy="0 0 0"/>
+    <axis xyz="0 0 1"/>
+    <!-- mirror of the drive limits: lower = -upper_drive, upper = -lower_drive -->
+    <limit lower="${-grip_upper}" upper="${-grip_lower}" effort="${grip_effort}" velocity="${grip_velocity}"/>
+    <dynamics damping="${grip_damping}" friction="0"/>
+    <mimic joint="gripper_drive_joint" multiplier="-1" offset="0"/>
+  </joint>
+
+  <!-- ============================ camera ============================ -->
+
+  <!-- Holder (D435 casing part from CAD). Origin = pocket floor centre. -->
+  <link name="camera_link">
+    <inertial>
+      <origin xyz="-0.0007458 0.0041096 -0.013307" rpy="0 0 0"/>
+      <mass value="0.058816"/>
+      <inertia ixx="3.0709E-05" ixy="-2.7871E-07" ixz="-4.3639E-08"
+               iyy="7.686E-06" iyz="1.0273E-07" izz="2.5745E-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${pkg}/camera_link.STL"/></geometry>
+      <material name="holder_purple"><color rgba="0.55 0.2 0.75 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${pkg}/camera_link.STL"/></geometry>
+    </collision>
+  </link>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+    <origin xyz="0.11697 0.054 0.06275" rpy="0 0 0"/>
+  </joint>
+
+  <!-- D435 body (not in the CAD assembly): 90 x 25 x 25 mm, 72 g -->
+  <link name="camera_body_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <mass value="${d435_mass}"/>
+      <inertia ixx="${d435_mass/12*(d435_len_y**2 + d435_len_z**2)}" ixy="0" ixz="0"
+               iyy="${d435_mass/12*(d435_len_x**2 + d435_len_z**2)}" iyz="0"
+               izz="${d435_mass/12*(d435_len_x**2 + d435_len_y**2)}"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${d435_len_x} ${d435_len_y} ${d435_len_z}"/></geometry>
+      <material name="d435_grey"><color rgba="0.15 0.15 0.15 1"/></material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><box size="${d435_len_x} ${d435_len_y} ${d435_len_z}"/></geometry>
+    </collision>
+  </link>
+
+  <joint name="camera_body_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_body_link"/>
+    <origin xyz="${d435_len_x/2} ${d435_center_y} 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Depth origin (left IR imager). X forward, same convention as the realsense driver's camera_depth_frame. -->
+  <link name="camera_depth_frame"/>
+  <joint name="camera_depth_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_depth_frame"/>
+    <origin xyz="${d435_depth_x} ${d435_depth_y} 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Optical frame: same origin, Z forward, X right, Y down -->
+  <link name="camera_depth_optical_frame"/>
+  <joint name="camera_depth_optical_joint" type="fixed">
+    <parent link="camera_depth_frame"/>
+    <child link="camera_depth_optical_frame"/>
+    <origin xyz="0 0 0" rpy="${-PI/2} 0 ${-PI/2}"/>
+  </joint>
+
+  <!-- ============================ IR array ============================ -->
+  <!-- Origin = sensing (bottom) face, 7.4 mm above the floor. Mass is a placeholder
+       (export had 0, which Gazebo rejects); weigh the board and replace. -->
+
+  <link name="ir_base_link">
+    <inertial>
+      <origin xyz="-0.00644 0.00058 0.01287" rpy="0 0 0"/>
+      <mass value="0.02"/>
+      <inertia ixx="2.84E-05" ixy="0" ixz="0" iyy="1.79E-06" iyz="0" izz="2.88E-05"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry><mesh filename="${pkg}/ir_base_link.STL"/></geometry>
+      <material name="jaw_white"/>
+    </visual>
+    <collision>
+      <origin xyz="-0.008 0.00073 0.010" rpy="0 0 0"/>
+      <geometry><box size="0.026 0.129 0.020"/></geometry>
+    </collision>
+  </link>
+
+  <joint name="ir_array_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="ir_base_link"/>
+    <origin xyz="0.0561226758708309 -0.000576899513916443 -0.01462" rpy="0 0 0"/>
+  </joint>
+
+  <!-- Sensor frame for range/reflectance readings: +X points at the floor -->
+  <link name="ir_sensor_frame"/>
+  <joint name="ir_sensor_joint" type="fixed">
+    <parent link="ir_base_link"/>
+    <child link="ir_sensor_frame"/>
+    <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
+  </joint>
+
+  <!-- Gazebo-only tags (friction, plugins, sensors) -->
+  <xacro:include filename="$(find trident_description)/urdf/trident.gazebo.xacro"/>
+
+</robot>

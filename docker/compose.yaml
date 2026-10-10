@@ -1,0 +1,63 @@
+# Trident simulation container. Runs unprivileged: only the GPU, the X11 socket
+# and the joystick devices are passed in.
+#
+# Use ./docker/run.sh up, which fills docker/.env (host UID/GID, group ids) and the X11 cookie.
+# After that, plain "docker compose" commands in this folder work too.
+
+name: trident
+
+services:
+  trident:
+    image: trident_ros:humble
+    container_name: trident_ros
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${HOST_UID:-1000}
+        GID: ${HOST_GID:-1000}
+    tty: true
+    stdin_open: true
+    working_dir: /ws
+
+    environment:
+      - DISPLAY=${DISPLAY:-:0}
+      # Cookie file written by run.sh, reached through the workspace mount
+      - XAUTHORITY=/ws/docker/.xauth
+      - QT_X11_NO_MITSHM=1
+      - ROS_DOMAIN_ID=${ROS_DOMAIN_ID:-0}
+      # NVIDIA: render on the discrete GPU. Comment these four lines for the iGPU fallback.
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=all
+      - __NV_PRIME_RENDER_OFFLOAD=1
+      - __GLX_VENDOR_LIBRARY_NAME=nvidia
+
+    volumes:
+      - ..:/ws
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # Whole folder, so a controller plugged in later still shows up
+      - /dev/input:/dev/input
+
+    # Allow access to input devices (major 13) without privileged mode
+    device_cgroup_rules:
+      - 'c 13:* rmw'
+
+    # Host group ids for joystick and GPU device files
+    group_add:
+      - '${INPUT_GID:-107}'
+      - '${VIDEO_GID:-44}'
+      - '${RENDER_GID:-110}'
+
+    # GPU option 1 (default): NVIDIA through the nvidia container toolkit
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+    # GPU option 2 (fallback): Intel or AMD integrated graphics through Mesa.
+    # Comment the deploy block and the four NVIDIA environment lines above, then uncomment:
+    # devices:
+    #   - /dev/dri:/dev/dri

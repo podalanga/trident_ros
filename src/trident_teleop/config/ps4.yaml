@@ -1,0 +1,32 @@
+# PS4 DualShock 4 mapping for trident teleop.
+# Indices follow the Linux hid-playstation driver as reported by joy_linux. Check with: ros2 topic echo /joy
+
+joy_node:
+  ros__parameters:
+    deadzone: 0.1
+    autorepeat_rate: 20.0   # keeps /cmd_vel flowing while a stick is held still
+
+teleop_twist_joy_node:
+  ros__parameters:
+    require_enable_button: true
+    enable_button: 4          # L1, hold to drive
+    enable_turbo_button: 5    # R1, hold for full speed
+    axis_linear:
+      x: 1                    # left stick up/down
+    scale_linear:
+      x: 0.2                  # m/s
+    scale_linear_turbo:
+      x: 0.5
+    axis_angular:
+      yaw: 3                  # right stick left/right
+    scale_angular:
+      yaw: 1.5                # rad/s
+    scale_angular_turbo:
+      yaw: 3.0
+
+gripper_teleop:
+  ros__parameters:
+    close_button: 0           # Cross
+    open_button: 1            # Circle
+    close_angle: 0.09         # rad, matches grip_upper in the xacro
+    open_angle: -1.0          # rad, matches grip_lower in the xacro
