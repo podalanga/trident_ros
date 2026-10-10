@@ -63,8 +63,8 @@ Mappings live in `src/trident_teleop/config/`.
 
 | Launch | Purpose | Main arguments |
 |---|---|---|
-| `trident_bringup sim.launch.py` | sim + RViz + teleop | `world`, `rviz`, `teleop`, `controller`, `joy_dev`, `headless` |
-| `trident_gazebo sim.launch.py` | Gazebo, spawn, bridge | `world`, `x`, `y`, `yaw`, `headless` |
+| `trident_bringup sim.launch.py` | sim + RViz + teleop | `world`, `rviz`, `teleop`, `controller`, `joy_dev`, `headless`, `follow`, `follow_distance`, `follow_height` |
+| `trident_gazebo sim.launch.py` | Gazebo, spawn, bridge | `world`, `x`, `y`, `yaw`, `headless`, `follow`, `follow_distance`, `follow_height` |
 | `trident_description display.launch.py` | model check in RViz | |
 | `trident_teleop teleop.launch.py` | joystick teleop | `controller`, `joy_dev` |
 

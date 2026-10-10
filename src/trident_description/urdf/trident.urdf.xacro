@@ -54,11 +54,11 @@
   <!-- Depth origin = left IR imager: 4.2 mm behind the front glass, 17.5 mm toward the camera's left (+Y) -->
   <xacro:property name="d435_depth_x"     value="${d435_len_x - 0.0042}"/>
   <xacro:property name="d435_depth_y"     value="${d435_center_y + 0.0175}"/>
-  <!-- Simulated stream. 1920 x 1080 at 60 Hz is beyond what a real D435 does (depth tops out at
-       1280 x 720, 30 Hz) and is heavy to render. Lower these three first if the sim runs slow,
-       for example 424 x 240 at 15 Hz. -->
-  <xacro:property name="d435_width"       value="1920"/>
-  <xacro:property name="d435_height"      value="1080"/>
+  <!-- Simulated stream. 848 x 480 is a native D435 depth mode and keeps the 87 x 58 deg FOV.
+       60 Hz is still beyond what a real D435 does at this size (30 Hz). Lower these three
+       further if the sim runs slow, for example 424 x 240 at 15 Hz. -->
+  <xacro:property name="d435_width"       value="848"/>
+  <xacro:property name="d435_height"      value="480"/>
   <xacro:property name="d435_rate"        value="60"/>
 
   <!-- IR line sensor array: channels sit in a row across the board (along Y) -->

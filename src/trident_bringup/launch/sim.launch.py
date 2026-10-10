@@ -3,6 +3,7 @@
 ros2 launch trident_bringup sim.launch.py
 ros2 launch trident_bringup sim.launch.py world:=empty rviz:=false
 ros2 launch trident_bringup sim.launch.py teleop:=true controller:=ps4
+ros2 launch trident_bringup sim.launch.py follow:=true follow_distance:=0.6
 """
 import os
 
@@ -23,7 +24,10 @@ def generate_launch_description():
     sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(gazebo_share, 'launch', 'sim.launch.py')),
         launch_arguments={'world': LaunchConfiguration('world'),
-                          'headless': LaunchConfiguration('headless')}.items())
+                          'headless': LaunchConfiguration('headless'),
+                          'follow': LaunchConfiguration('follow'),
+                          'follow_distance': LaunchConfiguration('follow_distance'),
+                          'follow_height': LaunchConfiguration('follow_height')}.items())
 
     teleop = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(teleop_share, 'launch', 'teleop.launch.py')),
@@ -36,6 +40,12 @@ def generate_launch_description():
                               description='World in trident_gazebo/worlds: maze, line or empty'),
         DeclareLaunchArgument('headless', default_value='false',
                               description='Run the Gazebo server without its GUI'),
+        DeclareLaunchArgument('follow', default_value='false',
+                              description='Make the Gazebo GUI camera follow the robot'),
+        DeclareLaunchArgument('follow_distance', default_value='0.4',
+                              description='Follow camera distance behind the robot in metres'),
+        DeclareLaunchArgument('follow_height', default_value='0.25',
+                              description='Follow camera height above the robot in metres'),
         DeclareLaunchArgument('rviz', default_value='true', description='Open RViz'),
         DeclareLaunchArgument('teleop', default_value='false',
                               description='Start joystick teleop with the simulation'),

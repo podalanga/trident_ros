@@ -29,6 +29,7 @@ Robot:
 
 Extra "name:=value" launch arguments can follow sim and teleop, for example:
   ./docker/run.sh sim empty rviz:=false
+  ./docker/run.sh sim maze follow:=true follow_distance:=0.6 follow_height:=0.3
 USAGE
 }
 
