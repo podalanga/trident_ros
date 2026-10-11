@@ -51,7 +51,10 @@ def generate_launch_description():
         # That history is what rejects a look-alike view, such as the QR code of the same
         # colour on another wall. Views are only added while moving, so standing in front
         # of a QR code does not flush the history.
+        # The robot spawns where the mapping run began, so it starts at the map origin.
+        # Otherwise RTAB-Map resumes from the pose where the previous run was shut down.
         rtabmap({'Mem/IncrementalMemory': 'false', 'Mem/InitWMWithAllNodes': 'true',
+                 'RGBD/StartAtOrigin': 'true',
                  'RGBD/LinearUpdate': '0.05', 'RGBD/AngularUpdate': '0.05',
                  'RGBD/MaxOdomCacheSize': '50'},
                 condition=UnlessCondition(mapping)),

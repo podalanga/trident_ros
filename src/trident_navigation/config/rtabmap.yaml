@@ -25,7 +25,9 @@ rtabmap:
     Vis/MinInliers: "25"
     # A match must be spread over the image. Without this a QR code alone is enough to
     # "recognise" the other wall that carries the same code, and the robot teleports there.
-    Vis/MinInliersDistribution: "0.02"
+    # The walls fill only a low band of the image, so real matches score 0.004 to 0.014
+    # and look-alikes stay under 0.0025. Anything higher than this rejects every fix.
+    Vis/MinInliersDistribution: "0.005"
 
     # Store the visual features and the occupancy grid of each node but not the camera
     # images. Localisation only needs the features, and the database stays a few megabytes.

@@ -126,3 +126,9 @@ Nav2 and spins at each one while RTAB-Map records. The arena is mapped without o
 a mission run the boxes are unknown and only exist in the costmaps. Mapping starts at the spawn
 pose, which makes the map frame line up with the world frame and lets the station poses be
 written in arena coordinates.
+
+A mission run starts RTAB-Map at the map origin, because that is where the robot spawns. From
+there every visual fix corrects map to odom. A fix is only accepted when its matched features
+are spread over the image (`Vis/MinInliersDistribution`). The walls fill a low band of the
+picture, so the limit sits between what a look-alike QR code scores and what a real view of
+the room scores. Set too high it rejects every fix and the robot runs on odometry alone.
