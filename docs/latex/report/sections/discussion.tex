@@ -1,0 +1,92 @@
+\section{Discussion and Limitations}
+\label{sec:discussion}
+
+\subsection{Validity of the Results}
+Four limitations apply to the results of \cref{sec:results} and determine how far they may
+be generalised.
+
+\paragraph{Simulation only.} Every measurement in this report was taken in the simulation.
+None was taken on the printed robot, for which there is no recorded data beyond the
+photographs and the outcome of the two competition rounds. The simulated motors are ideal
+within their limits, the floor is flat and evenly lit, and the infrared model has no
+dependence on ambient light. The results show that the software is correct with respect to
+its own model; they do not predict the performance of the hardware.
+
+\paragraph{A model built on CAD values.} The mass properties on which \cref{sec:mass} rests
+are those that the CAD program calculated. The robot was not weighed, and the motor data in
+the model are placeholders. The conclusions drawn there are large enough to survive
+moderate errors, since a wheel load of 18\,\% would have to be wrong by a factor of several
+before the conclusion changed, but the figures are not measurements.
+
+\paragraph{A favourable arena.} The arena was designed together with the software. Its
+markings have the widths that the array needs, its walls have the textures that the SLAM
+system needs, and its lighting casts no shadows. A competition field offers none of these
+by arrangement. The arena shows that the approach works when its assumptions hold, and
+\cref{sec:arena} states what those assumptions are.
+
+\paragraph{A small number of runs.} The mission was run twelve times and each line-following
+condition once. The runs differ in the order of the colours and in the obstacles, not in
+the start pose, the map or the lighting, and the map was the same in all of them.
+Differences of a few millimetres or a few seconds between conditions are within what a
+repetition could change.
+
+\subsection{Known Issues}
+\label{sec:issues}
+\begin{description}
+  \item[The wheels are lightly loaded.] The model puts 82\,\% of the weight on the caster
+        (\cref{sec:mass}). The simulation works within the resulting traction limit only
+        because the drive is limited to 1.0\unit{m/s^2}. On the hardware, the caster should
+        be moved towards the gripper and the camera to the centre line, after the robot has
+        been weighed on its three supports.
+  \item[The caster does not reach the floor in CAD.] The dome ends 0.74\unit{mm} above the
+        wheel contact plane (\cref{sec:urdf}). The simulation corrects this in its collision
+        geometry; the physical part needs the same correction.
+  \item[The jaws do not meet on the centre line.] The second jaw is $7.25^\circ$ off the
+        mirror image of the first in the exported assembly (\cref{sec:gripper}).
+  \item[The footprint used for planning is a disc.] The navigation treats the robot as a
+        disc of 0.13\unit{m} radius about the midpoint of the axle. The closed jaws reach
+        0.21\unit{m} ahead of that point and lie outside the disc. The inflation of the
+        costmap by 0.25\unit{m} covers the difference in the present arena; a polygonal
+        footprint would be the correct description.
+  \item[Low obstacles are not seen.] Anything lower than 3\unit{cm} is treated as floor, and
+        nothing closer than 0.15\unit{m} in front of the robot is seen at all.
+  \item[Localisation depends on a threshold.] The condition that rejects look-alike views
+        (\cref{sec:slam}) is a single number chosen for this arena and this camera height.
+        It rejects some true matches, and a different arena would need it chosen again.
+  \item[Dimensions are repeated in three files.] The station poses and the drop squares
+        mirror the arena file by hand (\cref{sec:arena}).
+  \item[No feedback from the jaws.] The mission assumes that a coin is caged when the array
+        is on the crossbar and the jaws have had time to close. It cannot tell that a coin
+        was missed or lost on the way. Only the referee sees this.
+  \item[One line sensor, no fallback.] This is the failure of the state round
+        (\cref{sec:electronics}), and the simulated mission has the same dependency: every
+        approach ends on the infrared array.
+\end{description}
+
+\subsection{What I Would Do Differently}
+Three changes follow from this work, in order of value.
+\begin{enumerate}
+  \item \emph{Check the mass properties during the design, not after it.} The calculation of
+        \cref{sec:mass} takes minutes once the CAD model exists. Done during the fifteen
+        days, it would have moved the caster and the camera before the first print.
+  \item \emph{Treat the line sensor as a part that can fail.} A check of all eight channels
+        on a black and a white reference at power-up, a soldered harness, and a degraded
+        mode that crosses the line section on odometry and vision are the measures
+        that address a failure of this kind.
+  \item \emph{Build the simulation first.} The simulation was written after the competition.
+        Written before it, it would have allowed the mission software to be developed
+        while the parts were printing.
+\end{enumerate}
+
+\subsection{Future Work}
+\begin{itemize}
+  \item Weigh the printed robot on its supports, measure the motors, and replace the
+        placeholder values of the model.
+  \item Move the caster and the camera as proposed and repeat the analysis of \cref{sec:mass}.
+  \item Run the mission on the hardware, beginning with the line follower and the docking,
+        which need only the infrared array and the encoders.
+  \item Add a contact or current signal from the gripper so that a missed coin is detected.
+  \item Derive the station poses and the referee squares from the arena file.
+  \item Vary the start pose, the lighting and the floor friction in the simulation, and
+        repeat each condition several times.
+\end{itemize}

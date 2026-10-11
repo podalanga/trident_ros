@@ -1,0 +1,105 @@
+% Figures of the results section, drawn from the files in docs/latex/data.
+
+\newcommand{\figpath}{%
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[x=3.3cm, y=3.3cm]
+    \arenaplan
+    \arenaobstacles{2.10/0.45, 1.60/0.10, 2.00/-0.35}
+    \draw[cA, line width=0.5pt, line join=round] plot file {../data/track_m03.dat};
+    \draw[draw=ink, fill=panel] (-0.017,-0.075) rectangle (0.163,0.075);
+    \draw[|-|] (2.3,-0.72) -- (3.3,-0.72);
+    \node[note, below] at (2.8,-0.73) {1\,m};
+  \end{tikzpicture}
+  \caption{True path of the robot in run 3 (obstacle preset b, three boxes). The path
+  follows the entry line, visits the three drop zones, and then alternates between the pick
+  bays and the drop zones, passing the boxes on whichever side the planner finds free.}
+  \label{fig:path}
+\end{figure}}
+
+\newcommand{\figtimes}{%
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[report, ybar stacked, bar width=9pt, ymin=0, ymax=340,
+        xlabel={run}, ylabel={simulated time [s]}, xtick={1,...,12}, enlarge x limits=0.06,
+        area legend, grid=none, ymajorgrids]
+      \addplot[fill=cD!55, draw=cD] table[x expr=\coordindex+1, y=t_line, col sep=comma] {../data/runs.csv};
+      \addplot[fill=cA, draw=cA] table[x expr=\coordindex+1, y=t_survey, col sep=comma] {../data/runs.csv};
+      \addplot[fill=cB!70, draw=cB] table[x expr=\coordindex+1, y=t_coins, col sep=comma] {../data/runs.csv};
+      \legend{entry line, survey of drop zones, three coins}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Duration of the three parts of the mission in each run.}
+  \label{fig:times}
+\end{figure}}
+
+\newcommand{\figslam}{%
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[report, xlabel={simulated time [s]}, ylabel={position error [mm]},
+        xmin=0, xmax=310, ymin=0, ymax=45, legend columns=-1]
+      \addplot[cA, line width=0.6pt] table[x=t, y=err_mm] {../data/slam_m03.dat};
+      \addplot[cB, line width=0.6pt] table[x=t, y=odom_mm] {../data/slam_m03.dat};
+      \legend{map pose, odometry alone}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Distance between the estimated and the true position of the robot in run 3, for
+  the pose in the map and for the odometry filter alone.}
+  \label{fig:slam}
+\end{figure}}
+
+\newcommand{\figdock}{%
+\begin{figure}[htbp]
+  \centering
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \begin{tikzpicture}
+      \begin{axis}[report, width=\linewidth, height=0.9\linewidth,
+          xlabel={across the stem [mm]}, ylabel={along the stem [mm]},
+          xmin=-10, xmax=10, ymin=-10, ymax=10, axis equal image]
+        \fill[black!25] (axis cs:-10,-6) rectangle (axis cs:10,6);
+        \addplot[only marks, mark=*, mark size=1.3pt, cA]
+          table[x=lateral_mm, y=along_mm, col sep=comma] {../data/picks.csv};
+      \end{axis}
+    \end{tikzpicture}
+    \caption{Array centre when the jaws close}
+  \end{subfigure}\hfill
+  \begin{subfigure}[b]{0.48\linewidth}
+    \centering
+    \begin{tikzpicture}
+      \begin{axis}[report, width=\linewidth, height=0.9\linewidth,
+          xlabel={along the stem [mm]}, ylabel={across the stem [mm]},
+          xmin=-25, xmax=25, ymin=-25, ymax=25, axis equal image]
+        \addplot[only marks, mark=*, mark size=1.3pt, cB]
+          table[x=dx_mm, y=dy_mm, col sep=comma] {../data/drops.csv};
+      \end{axis}
+    \end{tikzpicture}
+    \caption{Coin after release}
+  \end{subfigure}
+  \caption{Docking accuracy over all picks and drops. (a) Position of the centre of the
+  infrared array relative to the centre of the crossbar at the moment the jaws close; the
+  grey band is the crossbar, 12\unit{mm} wide. (b) Final position of each coin relative to
+  the centre of its drop square, which extends to $\pm125\unit{mm}$.}
+  \label{fig:dock}
+\end{figure}}
+
+\newcommand{\figline}{%
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[report, width=0.8\linewidth, height=0.36\linewidth,
+        xlabel={distance along the arena, $x$ [m]}, ylabel={offset from the line [mm]},
+        xmin=0, xmax=1.45, ymin=-12, ymax=12, legend columns=-1]
+      \addplot[cD, line width=0.6pt] table[x=x, y=err_mm] {../data/line_n0.0_v0.10.dat};
+      \addplot[cA, line width=0.6pt] table[x=x, y=err_mm] {../data/line_n0.05_v0.10.dat};
+      \addplot[cB, line width=0.6pt] table[x=x, y=err_mm] {../data/line_n1.0_v0.10.dat};
+      \legend{no noise, 0.05\,V, 1.0\,V}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Offset of the array centre from the entry line at 0.10\unit{m/s}, for three
+  levels of noise on the infrared readings. The two arcs of the S-bend lie between
+  $x=0.15$ and $1.19\unit{m}$.}
+  \label{fig:line}
+\end{figure}}

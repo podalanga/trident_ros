@@ -1,0 +1,54 @@
+\section*{Nomenclature}
+\addcontentsline{toc}{section}{Nomenclature}
+
+\noindent\textbf{Frames and mechanics (\cref{sec:mechanical,sec:simulation})}
+\begin{center}
+\begin{tabular}{@{}p{0.2\linewidth}p{0.74\linewidth}@{}}
+$x$, $y$ & robot frame with origin at the midpoint of the axle: $x$ forward, $y$ to the left \\
+$m$, $W$ & mass and weight of the robot \\
+$x_c$, $x_k$ & distance of the centre of mass and of the caster ahead of the axle \\
+$N_w$, $N_k$ & static load on the two wheels together and on the caster \\
+$\mu$ & coefficient of friction \\
+$a_{\max}$ & largest acceleration that the wheels can transmit without slip \\
+$d$, $h$ & distance of the centre of mass from an edge of the support triangle, its height above the floor \\
+$r$, $b$ & wheel radius and wheel separation \\
+$\omega_l$, $\omega_r$ & angular speed of the left and the right wheel \\
+$v$, $\omega$ & forward speed and turn rate of the robot \\
+$f$ & focal length of the parabolic jaw profile \\
+$\alpha$ & angle between the jaw surface and the direction of travel \\
+$\varphi$ & friction angle, $\arctan\mu$ \\
+$h_c$, $x_{\min}$ & height of the camera above the floor, nearest floor point that it sees \\
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Line following and mission (\cref{sec:arena,sec:autonomy,sec:results})}
+\begin{center}
+\begin{tabular}{@{}p{0.2\linewidth}p{0.74\linewidth}@{}}
+$p$ & pitch of the infrared channels \\
+$V_i$, $V_{\mathrm{ref}}$ & voltage of channel $i$, voltage on a white floor \\
+$d_i$ & darkness of channel $i$, from 0 on white to 1 on black \\
+$e$ & offset of the line from the centre of the array, positive to the left \\
+$k_p$, $k_d$ & proportional and derivative gain of the steering law \\
+$\omega_{\max}$ & limit of the commanded turn rate \\
+$L$ & distance of the array ahead of the axle \\
+$\psi$ & heading of the robot relative to the line \\
+$\omega_n$, $\zeta$ & natural frequency and damping ratio of the line-following loop \\
+station pose & pose in front of a stem at which the navigation hands over to the line follower \\
+marker & floor marking wider than the array: the start square, a crossbar or a drop square \\
+\end{tabular}
+\end{center}
+
+\noindent\textbf{Abbreviations}
+\begin{center}
+\begin{tabular}{@{}p{0.2\linewidth}p{0.74\linewidth}@{}}
+CAD & computer-aided design \\
+EKF & extended Kalman filter \\
+IMU & inertial measurement unit \\
+IR & infrared \\
+PD & proportional and derivative (control) \\
+RMS & root mean square \\
+SLAM & simultaneous localisation and mapping \\
+URDF & Unified Robot Description Format \\
+\end{tabular}
+\end{center}
+\clearpage

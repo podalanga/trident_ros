@@ -1,0 +1,36 @@
+% Plan of the mission arena in metres, for use inside a tikzpicture whose x and y units are
+% set to the wanted scale. Dimensions mirror src/trident_gazebo/worlds/arena.sdf.xacro.
+\newcommand{\arenaplan}{%
+  % floor and walls
+  \fill[white] (-0.3,-0.6) rectangle (3.3,1.8);
+  \draw[draw=ink, line width=1.1pt] (-0.3,-0.6) rectangle (3.3,1.8);
+  \draw[draw=ink, line width=1.1pt] (0.9,-0.6) -- (0.9,0.2);
+  \draw[draw=ink, line width=1.1pt] (0.9,1.0) -- (0.9,1.8);
+  % entry line and start square
+  \draw[draw=black, line width=0.9pt] (0,0) -- (0.15,0) arc (-90:-30:0.6) arc (150:90:0.6) -- (1.46,0.6);
+  \fill[black] (1.40,0.54) rectangle (1.52,0.66);
+  % pick bays: stem, crossbar, QR placard on the left wall
+  \foreach \bx in {1.5,2.0,2.5} {
+    \draw[draw=black, line width=0.9pt] (\bx,1.15) -- (\bx,1.45);
+    \draw[draw=black, line width=0.9pt] (\bx-0.06,1.45) -- (\bx+0.06,1.45);
+    \draw[draw=ink, line width=1.6pt] (\bx-0.08,1.79) -- (\bx+0.08,1.79);
+  }
+  % drop zones: stem, square, QR placard on the front wall
+  \foreach \dy in {0.7,0.2,-0.3} {
+    \draw[draw=black, line width=0.9pt] (2.575,\dy) -- (2.875,\dy);
+    \fill[black!80] (2.875,\dy-0.125) rectangle (3.125,\dy+0.125);
+    \draw[draw=ink, line width=1.6pt] (3.29,\dy-0.08) -- (3.29,\dy+0.08);
+  }
+}
+% Coins in their bays, in the colour order of the default launch (red, green, blue)
+\newcommand{\arenacoins}{%
+  \fill[cB] (1.5,1.58) circle (0.02);
+  \fill[cC] (2.0,1.58) circle (0.02);
+  \fill[cA] (2.5,1.58) circle (0.02);
+}
+% Obstacle boxes of a preset: \arenaobstacles{1.90/0.55, 1.75/-0.15}
+\newcommand{\arenaobstacles}[1]{%
+  \foreach \ox/\oy in {#1} {
+    \draw[draw=cB, fill=cB!35] (\ox-0.05,\oy-0.05) rectangle (\ox+0.05,\oy+0.05);
+  }
+}

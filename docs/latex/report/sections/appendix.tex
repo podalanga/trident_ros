@@ -1,0 +1,72 @@
+\section{Parameters}
+\label{app:parameters}
+\Cref{tab:params-sim,tab:params-mission} list the parameters of the simulation model and of
+the mission as used for the measurements of \cref{sec:results}.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Parameters of the simulation model.}
+  \label{tab:params-sim}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Parameter & Value \\
+    \midrule
+    Physics step & 1\unit{ms} \\
+    Friction: wheels, caster, jaws, coin & 1.0, 0, 0.8, 0.35 \\
+    Drive limits & 1.0\unit{m/s^2}, 8.0\unit{rad/s^2} \\
+    Wheel joint limits (placeholders) & 0.05\unit{N\,m}, 31.4\unit{rad/s} \\
+    Jaw joint: range, effort, speed & $-1.0$ to $0.09\unit{rad}$, 0.83\unit{N\,m}, 5.2\unit{rad/s} \\
+    Wheel odometry rate & 30\unit{Hz} \\
+    Depth camera: image, rate & $848\times480$, 60\unit{Hz} \\
+    Depth camera: field of view, range & $87^\circ\times58^\circ$, 0.2 to 10\unit{m} \\
+    Infrared array: channels, rate, noise & 8, 20\unit{Hz}, 0.05\unit{V} \\
+    Inertial sensor: rate, gyroscope noise & 100\unit{Hz}, 0.002\unit{rad/s} \\
+    Coin: diameter, height, mass & 40\unit{mm}, 15\unit{mm}, 23.4\unit{g} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \caption{Parameters of the mission and of the navigation.}
+  \label{tab:params-mission}
+  \begin{tabular}{@{}ll@{}}
+    \toprule
+    Parameter & Value \\
+    \midrule
+    Line follower: $k_p$, $k_d$, $\omega_{\max}$ & 45, 2, 1.5\unit{rad/s} \\
+    Line follower: floor threshold, dark level & 0.15, 0.5 \\
+    Marker: channels, samples & 6, 2 \\
+    Speed on the entry line, on a stem & 0.10\unit{m/s}, 0.05\unit{m/s} \\
+    Reach on the entry line, on a stem & 3.0\unit{m}, 0.60\unit{m} \\
+    Attempts per station & 2 \\
+    QR code: identical decodes, time allowed & 3, 4\unit{s} \\
+    Time allowed for the jaws & 1\unit{s} \\
+    Navigation speed, look-ahead & 0.15\unit{m/s}, 0.20\unit{m} \\
+    Goal tolerance & 2\unit{cm}, 0.05\unit{rad} \\
+    Costmap cell, robot radius, inflation & 2\unit{cm}, 0.13\unit{m}, 0.25\unit{m} \\
+    Obstacle height band & 0.03 to 0.40\unit{m} \\
+    Replanning rate & 1\unit{Hz} \\
+    Map: node spacing, loop detection rate & 0.10\unit{m} or 0.2\unit{rad}, 2\unit{Hz} \\
+    Minimum inliers, minimum inlier spread & 25, 0.005 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Running the Simulation}
+\label{app:running}
+All commands are given to one script on the host. The image has to be built once.
+\begin{verbatim}
+./docker/run.sh image      build the Docker image
+./docker/run.sh up         start the container
+./docker/run.sh build      build the workspace
+./docker/run.sh test       unit tests of the mission logic
+./docker/run.sh map        survey the empty arena and save the map
+./docker/run.sh mission    run the mission with the referee
+./docker/run.sh mission pick_order:=GBR drop_order:=RGB obstacles:=b
+\end{verbatim}
+\sloppy The measurements of \cref{sec:results} were produced by scripts kept in the folder
+\code{docs/latex/figures/src}. The script \code{run\_missions.sh} runs a list of missions
+without a display and records each, \code{run\_line\_sweep.sh} does the same for the line
+follower alone, and \code{analyse\_runs.py} and \code{analyse\_line.py} evaluate the
+recordings.

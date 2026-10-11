@@ -1,0 +1,133 @@
+\section{Arena Design}
+\label{sec:arena}
+
+The arena is a model of the task and does not reproduce the competition field. It keeps the structure of the task: a line to follow, then a
+room in which coins are collected at one wall and delivered, by colour, to another. It was
+designed together with the robot model, and most of its dimensions follow from two numbers
+of \cref{sec:mechanical}: the pitch of the infrared array and the blind zone of the camera.
+
+\subsection{Layout}
+The field measures $3.6\times2.4\unit{m}$ and is enclosed by walls 0.3\unit{m} high
+(\cref{fig:arena}). A partition with a doorway 0.8\unit{m} wide divides it into an entry
+lane and a room. The robot starts in the lane on a black line, which leads through an S-bend
+of two arcs of 0.6\unit{m} radius, through the doorway, to a black start square. Three pick
+bays lie along the left wall and three drop zones along the front wall. Up to three boxes of
+$100\times100\times150\unit{mm}$ stand in the room as obstacles.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[x=3.3cm, y=3.3cm]
+    \arenaplan
+    \arenacoins
+    \arenaobstacles{1.90/0.55, 1.75/-0.15}
+    % robot at the start, heading +x
+    \draw[draw=ink, fill=panel] (-0.017,-0.075) rectangle (0.163,0.075);
+    \node[note, anchor=north] at (0.07,-0.09) {start};
+    % station poses
+    \foreach \bx in {1.5,2.0,2.5} { \draw[->, cA, line width=0.8pt] (\bx,0.93) -- (\bx,1.07); }
+    \foreach \dy in {0.7,0.2,-0.3} { \draw[->, cA, line width=0.8pt] (2.33,\dy) -- (2.47,\dy); }
+    % labels
+    \node[note] at (0.3,1.55) {entry lane};
+    \node[note] at (1.2,-0.4) {room};
+    \node[note, anchor=south] at (2.0,1.83) {pick bays 1 to 3, QR code on the wall};
+    \node[note, rotate=-90, anchor=south] at (3.34,0.2) {drop zones 1 to 3, QR code on the wall};
+    \node[note, anchor=north] at (1.46,0.52) {start square};
+    \node[note, anchor=west] at (0.92,0.9) {doorway};
+    \node[note, text=cB, anchor=west] at (1.97,0.52) {obstacle};
+    \node[note, text=cA, anchor=east] at (2.3,0.83) {station pose};
+    % axes and scale
+    \draw[->] (-0.2,-0.5) -- (0.1,-0.5) node[note, right] {$x$};
+    \draw[->] (-0.2,-0.5) -- (-0.2,-0.2) node[note, above] {$y$};
+    \draw[|-|] (2.3,-0.72) -- (3.3,-0.72);
+    \node[note, below] at (2.8,-0.73) {1\,m};
+  \end{tikzpicture}
+  \caption{Plan of the arena, to scale, with obstacle preset a. The arrows are the station
+  poses at which the navigation hands over to the line follower.}
+  \label{fig:arena}
+\end{figure}
+
+\subsection{Floor Markings Dimensioned from the Array}
+\label{sec:markings}
+The infrared array has eight channels at a pitch of $p=15\unit{mm}$ and a span of
+105\unit{mm}. Three kinds of marking are derived from these two numbers (\cref{fig:markings}).
+\begin{description}
+  \item[Lines are 12\unit{mm} wide.] A line narrower than one pitch can never cover two
+        channels completely. At most two neighbouring channels respond to it, each
+        partially, and the ratio of their readings gives the position of the line between
+        them.
+  \item[Markers are 120\unit{mm} wide.] The start square and the crossbars of the pick
+        bays are wider than the whole array, so that all eight channels go dark together
+        when the array reaches one. Nothing else on the floor can produce that pattern, and
+        a line, which darkens two channels at most, cannot be mistaken for it.
+  \item[Drop squares are 250\unit{mm} wide.] The robot releases a coin when the array
+        reaches the near edge of the square. The coin then lies 0.13\unit{m} further in,
+        which is 5\unit{mm} from the centre of a square of this size.
+\end{description}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[scale=0.58]
+    % units: 10 mm. Left: array over a line. Right: array over a crossbar.
+    \begin{scope}
+      \fill[black] (0.9,-2.2) rectangle (2.1,2.2);
+      \foreach \i in {0,...,7} {
+        \draw[draw=ink, fill=white] ({(\i-3.5)*1.5},0) circle (0.4);
+      }
+      \draw[draw=cB, fill=cB!35] (0.75,0) circle (0.4);
+      \draw[draw=cB, fill=cB!35] (2.25,0) circle (0.4);
+      \draw[|-|] (-5.25,-1.3) -- (5.25,-1.3);
+      \node[note, below] at (-2.5,-1.35) {span 105\,mm};
+      \draw[|-|] (-5.25,1.0) -- (-3.75,1.0);
+      \node[note, above] at (-4.5,1.05) {15\,mm};
+      \node[note, above] at (1.5,2.25) {line, 12\,mm};
+    \end{scope}
+    \begin{scope}[xshift=14.5cm]
+      \fill[black] (-6,-0.6) rectangle (6,0.6);
+      \fill[black] (-0.6,-2.6) rectangle (0.6,-0.6);
+      \foreach \i in {0,...,7} {
+        \draw[draw=cB, fill=cB!55] ({(\i-3.5)*1.5},0) circle (0.4);
+      }
+      \draw[|-|] (-6,1.3) -- (6,1.3);
+      \node[note, above] at (0,1.35) {crossbar, 120\,mm};
+      \node[note, anchor=west] at (0.8,-1.8) {stem};
+    \end{scope}
+  \end{tikzpicture}
+  \caption{The infrared array over a line and over a marker, to scale. The circles are the
+  spots of the eight channels. A line darkens two channels at most, a marker all eight.}
+  \label{fig:markings}
+\end{figure}
+
+\subsection{Stations Placed for the Blind Zone}
+\label{sec:stations}
+The camera does not see the last 0.15\unit{m} of floor (\cref{eq:blind}). A pick bay is
+therefore a T on the floor: a stem 0.30\unit{m} long that leads to a crossbar, with the coin
+0.13\unit{m} beyond the crossbar. The distance of 0.13\unit{m} is the distance from the
+array to the space between the open jaws, so that a robot which stops with its array on the
+crossbar has the coin between its jaws. A drop zone is a stem of the same length that ends
+in the drop square.
+
+The navigation brings the robot to a station pose on the extension of the stem and short of
+its foot, 0.15\unit{m} for the bays and 0.175\unit{m} for the drop zones, and facing along
+it. From there the line follower drives straight until the array finds the stem
+(\cref{sec:docking}). The length of the stem is what absorbs the error of the navigation: a
+lateral error of a few centimetres at the foot is steered out before the crossbar is
+reached.
+
+\subsection{QR Codes and Wall Textures}
+A QR code of 160\unit{mm}, centred 0.11\unit{m} above the floor, is mounted on the wall
+behind every station. It encodes the name of a colour. At a pick bay it names the colour of
+the coin, and at a drop zone the colour that the zone accepts. The codes are generated with
+the highest level of error correction and a wide quiet zone, so that they remain readable
+when seen at an angle. The assignment of colours to bays and to zones is a launch argument,
+which makes each of the 36 combinations of pick order and drop order a different mission.
+
+Plain walls have no visual features, and a visual SLAM system cannot localise against them.
+The walls therefore carry generated textures with dense, irregular detail. They exist only
+for this purpose.
+
+\subsection{One Source for the Dimensions}
+The world is written as a parametrised file whose dimensions are defined once at its head.
+Two other files repeat a few of them: the list of station poses read by the mission, and
+the positions of the drop squares read by the referee. Both name the parameters that they
+mirror. A change of the arena therefore requires edits in three places, which is a known
+weakness of the present arrangement.

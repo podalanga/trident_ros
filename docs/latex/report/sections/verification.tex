@@ -1,0 +1,38 @@
+\section{Verification}
+\label{sec:verification}
+
+\subsection{Unit Tests}
+The arithmetic of the mission is kept in two modules that do not import ROS~2: the line
+mathematics (offset, marker detection and steering) and the table of stations and colours.
+They are covered by 13 unit tests, which run in under a second without the simulator. The
+tests fix the behaviour that the rest of the mission relies on:
+\begin{itemize}
+  \item a floor without a line gives no offset, and a line between the middle channels gives
+        an offset of zero;
+  \item a line under the leftmost channel gives a positive offset and one under the
+        rightmost a negative offset, which fixes the sign convention against the channel
+        order of the robot description;
+  \item readings below the floor threshold are ignored;
+  \item a marker requires its number of dark channels in successive samples, and a single
+        sample of a line in between resets the count;
+  \item the steering turns towards the line, saturates at its limit, and its derivative
+        term opposes an error that is closing;
+  \item the station file holds three bays and three drop zones, the table matches colours
+        to zones, and an unknown colour is rejected.
+\end{itemize}
+All 13 tests pass on the code as measured in \cref{sec:results}.
+
+\subsection{Scoring Against Ground Truth}
+A mission can report success and still have failed, for example when a coin slips out of
+the jaws on the way and the robot releases nothing. The verdict on a run is therefore not
+taken from the mission but from the referee of \cref{sec:referee}, which reads the true
+positions of the coins. The two are separated in the software as well: the ground truth is
+bridged from the simulator on a topic of its own, and no node of the robot subscribes to it.
+
+\subsection{Recording}
+The measurements of \cref{sec:results} were taken by a recording node that only listens. It
+logs, at 10\unit{Hz} of simulated time, the true pose of the robot, the pose estimated by
+the localisation and the pose of the odometry, together with every change of mission state,
+every command to the jaws and every line of the referee. The scripts that run the missions
+and evaluate the recordings are kept with the report, so that every number in it can be
+reproduced.

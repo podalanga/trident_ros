@@ -1,0 +1,2 @@
+pick_order=BGR drop_order=RBG obstacles=b
+logger exit 0

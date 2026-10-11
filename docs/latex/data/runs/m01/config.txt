@@ -1,0 +1,2 @@
+pick_order=RGB drop_order=BRG obstacles=a
+logger exit 0

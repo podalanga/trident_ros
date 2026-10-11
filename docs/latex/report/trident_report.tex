@@ -1,0 +1,117 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{tgpagella}
+\usepackage[sc]{mathpazo}
+\linespread{1.04}
+\usepackage{microtype}
+\usepackage[a4paper,margin=2.5cm,headheight=14pt]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage[section]{placeins}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage[toc,page]{appendix}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\usepackage[nameinlink,capitalise]{cleveref}
+
+\graphicspath{{../figures/}}
+
+% One palette for every diagram and chart. The four data colours are separable under the
+% common forms of colour blindness and remain distinct in greyscale print.
+\definecolor{ink}{HTML}{1B2A3A}
+\definecolor{accent}{HTML}{0B6E8E}
+\definecolor{cA}{HTML}{0072B2}
+\definecolor{cB}{HTML}{D55E00}
+\definecolor{cC}{HTML}{009E73}
+\definecolor{cD}{HTML}{7F7F7F}
+\colorlet{panel}{accent!7}
+\colorlet{rule}{ink!35}
+
+\tikzset{
+  >={Stealth[length=2mm]},
+  every picture/.style={line width=0.5pt, draw=ink, text=ink},
+  box/.style={draw=ink, fill=panel, rounded corners=1.5pt, align=center,
+              minimum height=9mm, inner sep=4pt, font=\footnotesize},
+  ext/.style={box, fill=white, dashed},
+  note/.style={font=\scriptsize, text=ink!80, align=center},
+}
+\pgfplotsset{
+  report/.style={
+    width=0.62\linewidth, height=0.38\linewidth,
+    axis line style={draw=ink}, tick style={draw=ink},
+    tick label style={font=\footnotesize}, label style={font=\footnotesize},
+    legend style={font=\footnotesize, draw=none, fill=none, at={(0.5,1.04)}, anchor=south,
+                  legend columns=-1, /tikz/every even column/.append style={column sep=9pt}},
+    legend cell align=left,
+    grid=major, grid style={draw=ink!12},
+    axis lines*=left,
+  }
+}
+
+% Running head: short title on the left, page number on the right.
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{ink!80}{Trident: Design and Simulation of a Pick and Place Robot}}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{rule}\leaders\hrule height \headrulewidth\hfill}}
+
+\titleformat{\section}{\Large\bfseries\color{ink}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{ink}}{\thesubsubsection}{0.6em}{}
+\titlespacing*{\paragraph}{0pt}{1.4ex plus 0.4ex}{0.8em}
+\setlength{\parskip}{0pt}
+\setlist{itemsep=2pt,topsep=4pt}
+\captionsetup{font=small,labelfont={bf,color=ink},labelsep=period,skip=6pt}
+\renewcommand{\arraystretch}{1.12}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\unit}[1]{\ensuremath{\,\mathrm{#1}}}
+\newcommand{\vect}[1]{\mathbf{#1}}
+
+\input{../figures/arena_plan}
+
+\begin{document}
+
+\input{sections/title}
+\thispagestyle{empty}
+\clearpage
+
+\tableofcontents
+\clearpage
+
+\input{sections/nomenclature}
+\input{sections/introduction}
+\input{sections/related}
+\input{sections/evolution}
+\input{sections/mechanical}
+\input{sections/electronics}
+\input{sections/simulation}
+\input{sections/arena}
+\input{sections/autonomy}
+\input{sections/results}
+\input{sections/verification}
+\input{sections/discussion}
+\input{sections/conclusion}
+
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+\clearpage
+\begin{appendices}
+\input{sections/appendix}
+\end{appendices}
+
+\end{document}

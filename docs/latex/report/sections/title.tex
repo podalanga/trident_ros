@@ -1,0 +1,62 @@
+\thispagestyle{empty}
+\begin{center}
+  \vspace*{1.2em}
+  {\small\scshape\color{accent} Technical Report\par}
+  \vspace{0.9em}
+  {\LARGE\bfseries\color{ink} Trident: Design and Simulation of a\par}
+  \vspace{0.3em}
+  {\LARGE\bfseries\color{ink} Differential-Drive Pick and Place Robot\par}
+  \vspace{1.0em}
+  {\color{rule}\rule{0.35\linewidth}{0.6pt}\par}
+  \vspace{1.2em}
+  {\large Joshua John Leo Valan Johnson\par}
+  \vspace{0.3em}
+  Roll No.\ 110123044\par
+  National Institute of Technology Tiruchirappalli\par
+  \vspace{1.0em}
+  October 2026\par
+  \vspace{1.6em}
+  {\large\bfseries\color{ink} Abstract\par}
+\end{center}
+\vspace{0.2em}
+
+\begin{quote}
+\small
+Trident is a small differential-drive robot that I designed and built for a competition
+task: to follow a line and then to carry coloured coins, each to the bin of its colour. This
+report presents the mechanical design of the robot and a simulation of it in which the
+whole task is carried out autonomously.
+
+The robot is a printed plate of $180\times150\unit{mm}$ on two N20 gearmotors and a ball
+caster, designed in SolidWorks and completed with its electronics in fifteen days. Its
+gripper does not lift. Two jaws with a parabolic profile, coupled by a pair of equal
+involute gears and driven by one servo, cage a coin on the floor, and the robot slides it to
+its destination; ridges on the jaws push the coin clear on release. A sliding condition for
+a coin on a parabolic jaw is derived as the design rule for the profile. The mass properties
+of the CAD model are then used to check the design. They show that the centre of mass lies
+inside the support triangle but that the wheels carry only 18\,\% of the weight, which
+limits the acceleration to 1.8\unit{m/s^2} at a friction coefficient of one and leaves a
+tipping margin of a factor of two. The depth camera cannot see the last 0.15\unit{m} of
+floor in front of the robot, and this constraint shapes the software.
+
+The robot is modelled in Gazebo from the CAD export, with models of the depth camera, the
+inertial sensor and an eight-channel infrared array. The floor markings of the mission
+arena are dimensioned from the pitch of that array. Mapping, localisation and navigation
+use RTAB-Map and Nav2; a line follower, docking sequences and a mission state machine were
+written for the robot. The damping of the line follower is shown to be set by the distance
+of the array ahead of the axle.
+
+In twelve simulated missions with four obstacle layouts the robot delivered all 36 coins,
+in 300\unit{s} per mission on average, scored by a referee on ground truth. The line was
+followed within 6\unit{mm}, the pose in the map was accurate to 10\unit{mm} RMS, the robot
+stopped on the pick markers within 7\unit{mm}, and coins were placed within 21\unit{mm} of
+the centres of their squares.
+
+All measurements were taken in simulation. The printed robot won the district round of the
+competition and failed in the state round when its infrared array stopped working; no
+measurements exist for the hardware.
+
+\medskip
+\noindent\textbf{Keywords:} mobile robot design, differential drive, caging gripper, line
+following, visual SLAM, navigation, Gazebo, ROS~2.
+\end{quote}

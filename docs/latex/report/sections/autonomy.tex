@@ -1,0 +1,288 @@
+\section{Autonomy}
+\label{sec:autonomy}
+
+\subsection{Mission and Architecture}
+The mission has four parts.
+\begin{enumerate}
+  \item Follow the line from the start to the start square.
+  \item Visit the three drop zones and read at each the colour that it accepts.
+  \item For each pick bay in turn: approach it, read the colour of its coin, cage the coin,
+        carry it to the drop zone of that colour and release it.
+  \item Throughout, drive around obstacle boxes that are not in the map.
+\end{enumerate}
+
+The software is a set of ROS~2 packages (\cref{fig:architecture}). Odometry, mapping,
+localisation, path planning and path tracking are taken from existing open-source packages
+and configured for this robot. The line follower, the docking sequences, the mission state
+machine and the referee are written for it (\cref{tab:sources}). The packages for
+navigation and for the mission have no knowledge that they run in a simulator: everything
+that exists only in simulation, including the emulation of the infrared array and the
+referee, is kept in a separate package.
+
+\begin{table}[htbp]
+  \centering
+  \caption{Origin of the components of the autonomy stack.}
+  \label{tab:sources}
+  \small
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    Function & Solution & Source \\
+    \midrule
+    Odometry & filter of wheel speed and yaw rate & \code{robot\_localization}~\cite{robotlocalization} \\
+    Mapping, localisation & RGB-D graph SLAM & RTAB-Map~\cite{rtabmap} \\
+    Planning and tracking & NavFn, Regulated Pure Pursuit & Nav2~\cite{nav2} \\
+    QR decoding & bar code reader on the colour image & ZBar~\cite{zbar} \\
+    Line following & PD steering on the line offset & this work \\
+    Pick and drop sequences & infrared array and odometry & this work \\
+    Mission sequencing & state machine & this work \\
+    Scoring & referee on simulator ground truth & this work \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \node[ext, minimum width=24mm, minimum height=74mm] (sim) at (0,0)
+      {Gazebo\\[3pt]\scriptsize robot, arena,\\\scriptsize sensors};
+    \node[box, minimum width=30mm] (ekf) at (6.1,3.0) {odometry filter};
+    \node[box, minimum width=30mm] (slam) at (6.1,1.5) {RTAB-Map};
+    \node[box, minimum width=30mm] (nav) at (6.1,0.0) {Nav2};
+    \node[box, minimum width=30mm] (line) at (6.1,-1.5) {line follower};
+    \node[box, minimum width=30mm] (qr) at (6.1,-3.0) {QR reader};
+    \node[box, minimum width=28mm, minimum height=50mm] (mis) at (11.6,-1.2)
+      {mission\\[3pt]\scriptsize state machine,\\\scriptsize docking};
+    \node[ext, minimum width=28mm] (ref) at (11.6,3.0) {referee};
+    \draw[->] (sim.east |- ekf) -- node[note, above] {wheel odometry, IMU} (ekf);
+    \draw[->] (sim.east |- slam) -- node[note, above] {colour, depth} (slam);
+    \draw[->] (sim.east |- nav) -- node[note, above] {depth cloud} (nav);
+    \draw[->] (sim.east |- line) -- node[note, above] {IR voltages} (line);
+    \draw[->] (sim.east |- qr) -- node[note, above] {colour image} (qr);
+    \draw[->] (ekf) -- node[note, right] {odometry} (slam);
+    \draw[->] (slam) -- node[note, right] {map, pose} (nav);
+    \draw[->] (mis.west |- nav) -- node[note, above] {goal} (nav);
+    \draw[->] (mis.west |- line) -- node[note, above] {goal} (line);
+    \draw[->] (qr) -- node[note, above] {colour} (mis.west |- qr);
+    \draw[->, dashed] (mis) -- node[note, right] {state} (ref);
+    \draw[->] (mis.south) -- ++(0,-0.75) -| node[note, pos=0.25, below] {velocity command, jaw angle} (sim.south);
+    \draw[->, dashed] (sim.north) -- ++(0,0.55) -| node[note, pos=0.25, above] {true poses of the coins} (ref.north);
+  \end{tikzpicture}
+  \caption{Software architecture. Solid boxes run unchanged on a real robot; dashed boxes
+  exist only in simulation. Velocity commands are issued by Nav2, by the line follower or by
+  the mission itself, one at a time, because the mission waits for each step to finish before
+  it starts the next.}
+  \label{fig:architecture}
+\end{figure}
+
+\subsection{Odometry}
+\label{sec:odometry}
+An extended Kalman filter in planar mode fuses the forward speed from the wheel encoders
+with the yaw rate from the gyroscope, at 30\unit{Hz}. The yaw rate of the wheel odometry is
+deliberately left out: when the robot turns on the spot the wheels slip, and the gyroscope
+is the better source. The filter publishes the transform from the odometry frame to the
+robot.
+
+\subsection{Mapping and Localisation}
+\label{sec:slam}
+\paragraph{Building the map.} The map is built once, in the empty arena. A survey node
+sends a fixed route of seven stops to the navigation and turns the robot through a full
+circle at each stop, so that the camera sees every wall, while RTAB-Map adds a node to its
+graph every 10\unit{cm} or 0.2\unit{rad} of travel. The route ends at the start pose and
+closes the loop there. Because the survey starts at the start pose, the map frame coincides
+with the frame of the arena, and the station poses can be written in arena coordinates. The
+map is constrained to the plane, and its occupancy grid has cells of 2\unit{cm}. Points
+below 3\unit{cm} are treated as floor, which keeps coins out of the map.
+
+\paragraph{Localising in it.} A mission run loads the whole map and starts at its origin,
+where the robot stands. Each time RTAB-Map recognises a view, twice a second at most, it
+corrects the transform from the map to the odometry frame. Between corrections the pose is
+carried by the odometry filter.
+
+\paragraph{Look-alike views.} The arena contains the same QR code in two places, once at a
+pick bay and once at a drop zone. Seen from close by, a code fills much of the image, and a
+match of the features of the code alone was enough for RTAB-Map to conclude that the robot
+stood in front of the other wall. The pose then jumped across the room. The remedy is a
+condition on how the matched features are spread over the image: a view of the room matches
+across the whole width of the walls, a view of a code only within the code. The walls fill a
+low band of the image, and during development real views scored between 0.004 and 0.014 on
+this measure and look-alikes below 0.0025; the threshold is set at 0.005. The choice is a
+compromise. A threshold at the lower end of the real range rejects some true matches, and
+one set higher rejects them all, after which the robot runs on odometry alone. In addition,
+every new fix is checked against the last fifty views and the odometry between them.
+
+\subsection{Navigation}
+\label{sec:navigation}
+Between stations the robot is driven by Nav2. The global planner is NavFn on a costmap of
+2\unit{cm} cells built from the saved map, and the path is planned again once a second,
+which is what steers the robot around boxes that are not in the map. The path is tracked by
+the Regulated Pure Pursuit controller at 0.15\unit{m/s} with a look-ahead of 0.20\unit{m},
+and the robot is turned on the spot when the path departs from its heading by more than
+0.5\unit{rad}. A goal counts as reached within 2\unit{cm} and 0.05\unit{rad}.
+
+Obstacles enter the costmaps from the depth image, reduced to every fourth pixel and to
+cells of 2\unit{cm}. Points between 3\unit{cm} and 0.40\unit{m} above the floor mark
+obstacles, and rays through free space clear them. The robot is treated as a disc of
+0.13\unit{m} radius, and obstacles are inflated by 0.25\unit{m}.
+
+Three properties of the robot shape the configuration.
+\begin{itemize}
+  \item The camera looks forward only. The controller is not allowed to reverse, and the
+        recovery that backs the robot up is removed from the behaviour tree. The remaining
+        recoveries clear the costmaps, turn the robot through a quarter circle to look
+        around, and wait.
+  \item Low objects do not reach the costmap. This is intended for coins and sensor noise,
+        and it means that an obstacle lower than 3\unit{cm} would not be avoided.
+  \item Turns on the spot are slow, 0.3 to 0.6\unit{rad/s}, so that successive camera views
+        overlap and the localisation can follow.
+\end{itemize}
+
+\subsection{Line Follower}
+\label{sec:linefollower}
+\paragraph{Line position.} Each voltage $V_i$ is converted to a darkness
+$d_i=1-V_i/V_{\mathrm{ref}}$ between 0 on white and 1 on black. Readings below 0.15 are set
+to zero, so that noise on the white floor carries no weight. The offset of the line from the
+centre of the array is the weighted mean
+\begin{equation}
+  e = p\,\frac{\sum_i d_i\,(i-3.5)}{\sum_i d_i}, \qquad i=0,\dots,7,
+  \label{eq:offset}
+\end{equation}
+with $p$ the pitch. It is positive when the line is to the left. Because a line narrower
+than the pitch darkens two neighbouring channels partially (\cref{sec:markings}), $e$ varies
+continuously as the line moves across the array, and the resolution is much finer than the
+pitch.
+
+\paragraph{Steering.} The robot drives at a constant speed $v$ and steers with
+\begin{equation}
+  \omega = \operatorname{sat}_{\omega_{\max}}\bigl(k_p\,e + k_d\,\dot e\bigr),
+  \label{eq:steer}
+\end{equation}
+with $k_p=45\unit{rad/s}$ per metre, $k_d=2\unit{rad/s}$ per metre per second and
+$\omega_{\max}=1.5\unit{rad/s}$, at 20\unit{Hz}. If the line leaves the array, the robot
+turns at 0.6\unit{rad/s} towards the side on which the line was last seen. If no line has
+been seen yet, it drives straight, so that a goal may start a little short of a stem.
+
+\paragraph{Why the position of the array matters.} Let the array be a distance $L$ ahead of
+the axle, let $\psi$ be the heading of the robot relative to a straight line, and let $y$ be
+the lateral position of the array relative to the line, so that $e=-y$. For small angles,
+\begin{equation}
+  \dot y = v\,\psi + L\,\omega, \qquad \dot\psi = \omega .
+\end{equation}
+With the proportional part of \cref{eq:steer}, $\omega=-k_p\,y$, this gives
+\begin{equation}
+  \ddot y + L\,k_p\,\dot y + v\,k_p\,y = 0,
+  \label{eq:line-dynamics}
+\end{equation}
+a second-order system with natural frequency $\omega_n=\sqrt{v\,k_p}$ and damping ratio
+$\zeta=\tfrac{1}{2}L\sqrt{k_p/v}$. The damping comes entirely from $L$: an array on the axle
+($L=0$) would give an undamped oscillation under proportional control, whatever the gain.
+With $L=48\unit{mm}$ and $k_p=45$, the damping ratio is 0.51 at the entry speed of
+0.10\unit{m/s} and 0.72 at the docking speed of 0.05\unit{m/s}. The derivative term raises
+the first value slightly, to 0.53. The mechanical decision to hang the array ahead of the
+axle is thus what makes a simple controller sufficient, and driving the stems slowly is what
+makes the approach to a marker well damped.
+
+\paragraph{Markers.} A marker is reported when at least six channels have a darkness of 0.5
+or more in two successive samples. A line darkens two channels at most, so only a square or
+a crossbar can do this, and the requirement of two samples rejects a single noisy reading.
+Two sample periods at 20\unit{Hz} are 5\unit{mm} of travel at the docking speed.
+
+The follower is offered as an action. A goal names a maximum distance and a speed, and the
+result states whether a marker was reached and how far the robot drove.
+
+\subsection{Docking}
+\label{sec:docking}
+A station is approached in two stages (\cref{fig:docking}). Nav2 brings the robot to the
+station pose. The line follower then drives straight until the array finds the stem, steers
+onto it, and stops at the marker. Everything after that is a timed movement of the jaws or
+a straight move measured by odometry.
+
+\begin{description}
+  \item[Pick.] Open the jaws. Follow the stem to the crossbar, at which point the coin is
+        between the jaws. Read the QR code on the wall. Close the jaws. Back out by the
+        distance just driven.
+  \item[Drop.] Follow the stem until the array enters the square. Open the jaws, which
+        pushes the coin clear. Back out, then close the jaws.
+  \item[Read.] Follow the stem to its marker, read the QR code and back out. This is used
+        for the survey of the drop zones.
+\end{description}
+The robot backs out along the stem that it has just driven and by the distance that it
+measured, which is the only reverse movement in the mission. It needs no sensing behind the
+robot because the path has just been traversed.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[x=9cm, y=9cm]
+    % pick bay drawn with the approach direction to the right (x along the stem)
+    \draw[draw=ink, line width=1.1pt] (0.95,-0.17) -- (0.95,0.17);
+    \node[note, rotate=-90, anchor=south] at (0.96,0) {wall with QR code};
+    \draw[draw=black, line width=1.2pt] (0.30,0) -- (0.60,0);
+    \draw[draw=black, line width=1.2pt] (0.60,-0.06) -- (0.60,0.06);
+    \fill[cB] (0.73,0) circle (0.02);
+    \node[note, anchor=south, text=cB] at (0.73,0.03) {coin};
+    % station pose with a lateral error
+    \draw[draw=ink, fill=panel] (0.133,-0.045) rectangle (0.313,0.105);
+    \fill[ink] (0.15,0.03) circle (0.006);
+    \draw[->, cA, line width=0.8pt] (0.15,0.03) .. controls (0.30,0.03) and (0.33,0.0) .. (0.42,0.0) -- (0.545,0.0);
+    \node[note, anchor=north] at (0.22,-0.05) {robot at the station pose};
+    \node[note, anchor=south, text=cA] at (0.44,0.06) {line follower};
+    \draw[|-|] (0.15,-0.13) -- (0.30,-0.13);
+    \node[note, below] at (0.225,-0.135) {0.15\,m};
+    \draw[|-|] (0.30,-0.13) -- (0.60,-0.13);
+    \node[note, below] at (0.45,-0.135) {stem, 0.30\,m};
+    \draw[|-|] (0.60,-0.13) -- (0.73,-0.13);
+    \node[note, below] at (0.665,-0.135) {0.13\,m};
+    \node[note, anchor=south] at (0.60,0.07) {crossbar};
+  \end{tikzpicture}
+  \caption{Approach to a pick bay, to scale. The navigation leaves the robot at the station
+  pose with an error of a few centimetres; the line follower removes it along the stem and
+  stops the array on the crossbar, with the coin between the open jaws.}
+  \label{fig:docking}
+\end{figure}
+
+\paragraph{QR codes are read at the station only.} The decoder reports the text of a code
+but not where the code is in the image. A code is therefore trusted only when the robot
+stands at the marker in front of it, where no neighbouring code is in view, and only after
+three identical decodes in a row. Decodes received before the robot arrived are discarded,
+so that a code passed on the way is never taken for the code of the station.
+
+\subsection{Mission State Machine}
+\label{sec:statemachine}
+The mission is a sequence of blocking steps, and the state machine only decides what happens
+next (\cref{fig:states}). Its failure handling is deliberately plain.
+\begin{itemize}
+  \item If the start square is not found within 3\unit{m} of travel, the mission fails.
+  \item If a marker is not found at a station, the robot backs out and tries the station once
+        more.
+  \item A drop zone whose code cannot be read is left out of the table of colours.
+  \item A coin whose code cannot be read is left in its bay, with the jaws still open, since
+        without a colour there is nowhere to take it.
+  \item A coin whose colour has no known drop zone is set down where the robot stands.
+\end{itemize}
+The mission reports success only when all three coins have been delivered.
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}
+    \node[box, minimum width=27mm] (a) at (0,0) {follow\\entry line};
+    \node[box, minimum width=27mm] (b) at (3.6,0) {survey\\drop zones};
+    \node[box, minimum width=27mm] (c) at (7.2,0) {pick\\bay $k$};
+    \node[box, minimum width=27mm] (d) at (10.8,0) {drop\\by colour};
+    \node[box, minimum width=18mm] (e) at (11.3,-1.9) {done};
+    \node[box, minimum width=20mm] (f) at (0,-1.9) {failed};
+    \draw[->] (a) -- (b); \draw[->] (b) -- (c); \draw[->] (c) -- (d);
+    \draw[->] (d.north) -- ++(0,0.5) -| node[note, pos=0.25, above] {next bay} (c.north);
+    \draw[->] ([xshift=5mm]d.south) -- node[note, right] {three delivered} (e.north);
+    \draw[->] (a) -- node[note, right] {no start square} (f);
+    \draw[->] ([xshift=-12mm]d.south) |- node[note, pos=0.75, above] {fewer than three delivered} (f.east);
+  \end{tikzpicture}
+  \caption{States of the mission.}
+  \label{fig:states}
+\end{figure}
+
+\subsection{Referee}
+\label{sec:referee}
+A run is scored by a referee that reads the true positions of the coins from the simulator.
+A coin is home when its centre lies inside the drop square whose QR code names its colour.
+The referee has no connection to the robot other than the state of the mission, which tells
+it when to give its verdict, and nothing on the robot may read the ground truth. A run
+passes when all three coins are home at the end.

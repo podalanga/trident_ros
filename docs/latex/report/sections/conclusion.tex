@@ -1,0 +1,24 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+Trident is a small robot designed around one task, and the design decisions that matter
+most are the ones that removed something. The gripper has no lift axis and no sensor: two
+curved jaws on a pair of equal gears cage a coin and slide it, and ridges on the jaws leave
+it behind on release. The camera cannot see the floor in front of the robot, and no second
+camera was added: the infrared array that follows the line also guides the last part of
+every approach, and the floor markings are dimensioned from its pitch so that it can.
+
+Two lessons recur. The first is that a model answers questions that were settled by eye
+during the build. The centre of mass lies inside the support triangle, as intended, but the mass
+properties of the CAD model put 82\,\% of the weight on the caster, and this, and not the
+motors, limits the acceleration of the robot. The simulation showed the
+consequence as a skid before the calculation explained it. The second is that the position
+of a sensor is a control parameter. The damping of the line follower is set by the distance
+of the array ahead of the axle, and an array on the axle would have needed a different
+controller.
+
+The simulated mission is complete: the robot follows the line, maps and localises with its
+camera, drives around unmapped obstacles, and delivers the three coins by colour, scored by
+a referee that it cannot see. The steps that remain are on the hardware: to weigh the robot
+on its supports and move the caster and the camera accordingly, to replace the breadboard
+wiring of the infrared array, and to run the mission on the printed robot.

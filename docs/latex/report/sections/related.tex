@@ -1,0 +1,43 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{Differential-drive platforms.} The differential drive, two independently driven
+wheels on one axle with a passive third support, is the standard layout of small indoor
+robots, and its kinematics and odometry are textbook material~\cite{siegwart}. Frame
+conventions for such platforms in ROS are fixed by REP~105~\cite{rep105}, which this work
+follows.
+
+\paragraph{Line following.} Following a line with a row of reflectance sensors is a feedback
+problem in which the lateral offset of the line under the row is the measured error. A
+proportional and derivative law on that error is the common solution~\cite{astrom}. The
+distance of the sensor row ahead of the axle acts as a look-ahead, as it does in pure
+pursuit path tracking~\cite{purepursuit}.
+
+\paragraph{Pushing and caging.} A gripper that surrounds an object without clamping it is
+a cage: the object can move, but not escape~\cite{caging}. Moving an object by pushing it
+along a support surface, and the way a pushed object slides along the pusher until the
+contact is stable, were analysed by Mason~\cite{mason}. The gripper of this robot relies on
+both effects in place of a lift axis.
+
+\paragraph{Simulation.} Gazebo~\cite{gazebo} is the simulator most widely used with ROS.
+This work uses its current generation, Gazebo Fortress, with ROS~2
+Humble~\cite{ros2}. The robot description is exported from CAD in the URDF format.
+
+\paragraph{Localisation and mapping.} RTAB-Map~\cite{rtabmap} is an open-source SLAM
+library that builds a graph of camera views, detects when a place is seen again from visual
+features, and can run in a localisation mode against a saved map. It accepts the colour and
+depth streams of a stereo depth camera such as the Intel RealSense D435~\cite{realsense}.
+Wheel odometry and an inertial sensor are commonly fused beforehand by an extended Kalman
+filter; the \code{robot\_localization} package~\cite{robotlocalization} is the usual
+implementation. The underlying theory is covered by Thrun \emph{et al.}~\cite{thrun}.
+
+\paragraph{Navigation.} Nav2~\cite{nav2} is the navigation framework of ROS~2. It combines layered
+costmaps~\cite{costmap} with a global planner, a path-tracking controller and recovery
+behaviours, sequenced by a behaviour tree~\cite{behaviortrees}. This work uses its NavFn
+planner, which is Dijkstra's algorithm~\cite{dijkstra} on the costmap, and the Regulated
+Pure Pursuit controller~\cite{rpp}.
+
+\paragraph{Position of this work.} None of the components above is new. The contribution
+lies in the design of a robot around a specific task, and in the way the limits of that
+robot (no lift axis, a camera that cannot see the floor directly in front of it) determine
+how the existing components are combined with task-specific ones.

@@ -1,0 +1,12 @@
+Waiting for an action server to become available...
+Sending goal:
+     max_distance: 3.0
+speed: 0.3
+
+Goal accepted with ID: 6bb773c5b75a46809fa19fd6c4a742f9
+
+Result:
+    reached_marker: true
+distance: 1.5081721544265747
+
+Goal finished with status: SUCCEEDED

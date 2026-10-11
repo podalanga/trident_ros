@@ -1,0 +1,92 @@
+\section{Simulation Model}
+\label{sec:simulation}
+
+The simulation runs in Gazebo Fortress with ROS~2 Humble, inside a Docker container that is
+not privileged and receives only the graphics card, the display socket and the joystick
+devices of the host. One script builds the image, starts the container and launches every
+configuration described below.
+
+\subsection{From CAD to a Robot Description}
+\label{sec:urdf}
+The CAD assembly was exported from SolidWorks as a URDF description with one mesh per link.
+An export of this kind is a starting point and not a usable model. The description used
+here is maintained by hand on top of the export, and it differs from it in the following
+ways.
+\begin{itemize}
+  \item A frame \code{base\_footprint} on the floor was added below \code{base\_link}, which
+        stays at the midpoint of the axle, as REP~105 prescribes~\cite{rep105}.
+  \item The wheel axes were turned so that a positive rotation drives the robot forward.
+  \item The right wheel was made coaxial with the left one. The export had placed it
+        0.5\unit{mm} higher.
+  \item The limits, effort, velocity and damping of the gripper joints, all zero in the
+        export, were filled in from the data of the servo.
+  \item The body of the depth camera, which was not part of the CAD assembly, was added as a
+        box of $90\times25\times25\unit{mm}$ and 72\unit{g}, together with the depth and
+        optical frames that the camera driver publishes.
+  \item The infrared array was given a mass. The export had assigned none, and the simulator
+        rejects a link without mass.
+\end{itemize}
+
+\paragraph{Collision geometry.} The visual mesh of the chassis has 277\,864 triangles. For
+contact it is replaced by primitives: a box for the plate, a box for the volume above it, a
+cylinder for each wheel and a sphere for the caster. The jaws and the camera holder keep
+their meshes, of about 2\,000 and 700 triangles, because the shape of the jaws is what the
+gripper depends on.
+
+\paragraph{The caster.} In the CAD model the bottom of the caster dome is 0.74\unit{mm}
+above the plane on which the wheels stand, so the robot would rock on it. The collision
+sphere of the model is sized to touch the floor exactly. The description records this as a
+correction to be made on the physical part.
+
+\subsection{Drive and Contact}
+\label{sec:sim-drive}
+The wheels are driven by the differential-drive system of Gazebo, which converts a velocity
+command into wheel speeds by \cref{eq:diffdrive} and publishes wheel odometry at
+30\unit{Hz}. The physics step is 1\unit{ms}. The friction coefficients are 1.0 for the
+wheels, 0 for the caster, 0.8 for the jaws and 0.35 for the coins.
+
+The drive is limited to 1.0\unit{m/s^2} and 8\unit{rad/s^2}, in acceleration and in
+braking. The braking limit was added after the first runs: without it the wheels stopped
+at once, and the robot skidded and turned. \Cref{sec:mass}
+gives the reason, a wheel load of 18\,\% of the weight, and the limit of
+\cref{eq:traction} that the chosen value respects.
+
+\subsection{Gripper}
+The two jaw joints are position-controlled at the rated speed of the servo. Gazebo Fortress
+ignores the mimic relation by which a URDF couples one joint to another, so the gear pair is
+reproduced in software: a node receives the commanded angle of the driven jaw, clamps it to
+the joint limits, rejects values that are not finite, and sends the angle to one jaw and its
+negative to the other.
+
+\subsection{Sensor Models}
+\label{sec:sensor-models}
+\paragraph{Depth camera.} The camera is simulated as an RGB-D sensor at the position of the
+left infrared imager of the D435, with the depth field of view of the real camera,
+$87^\circ\times58^\circ$, an image of $848\times480$ pixels, a depth range from 0.2 to
+10\unit{m} and Gaussian image noise with a standard deviation of 0.007. The topic names
+match those of the driver of the real camera, so that the same nodes can run on the
+hardware. The point cloud is computed in ROS from the depth image, because the cloud that
+the simulator produces is expressed in a different axis convention under the same frame
+name.
+
+\paragraph{Infrared array.} Gazebo has no reflectance sensor. Each channel is therefore
+modelled by a camera of $8\times8$ pixels that looks straight down from the sensing face
+and covers a spot about 8\unit{mm} across on the floor, comparable to the spot of a
+reflectance sensor at that height. A node averages the brightness of each small image,
+scales it to a voltage between 0 and 5\unit{V}, adds Gaussian noise, and publishes the eight
+voltages at 20\unit{Hz}. A channel that lies over the edge of a line therefore returns an
+intermediate voltage, as the real sensor does, and it is this that allows the position of a
+line to be interpolated between channels (\cref{sec:linefollower}). The arena is lit evenly
+and without shadows, so that the readings do not depend on the heading of the robot. In the
+mission runs the noise has a standard deviation of 0.05\unit{V}.
+
+\paragraph{Inertial sensor.} The inertial sensor is sampled at 100\unit{Hz}, with Gaussian
+noise of 0.002\unit{rad/s} on the angular rate and 0.02\unit{m/s^2} on the acceleration.
+
+\subsection{What the Model Leaves Out}
+The motors are ideal velocity sources within the acceleration limits: there is no model of
+the gear train, of backlash or of the motor driver. The servo is an ideal position source.
+The encoders have no quantisation. The infrared model has no dependence on ambient light or
+on the height of the array above the floor. The floor is flat. These omissions bound what
+the results of \cref{sec:results} can say about the hardware, and \cref{sec:discussion}
+returns to them.

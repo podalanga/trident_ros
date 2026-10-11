@@ -1,0 +1,43 @@
+\section{Electronics and Sensing}
+\label{sec:electronics}
+
+This section is short by intent. It records what the design notes, the photographs of the
+robot and the simulation model establish about the electronics, and nothing beyond that. No
+circuit diagram or parts list of the competition robot was available when this report was
+written.
+
+\subsection{Actuators}
+Two N20 gearmotors with encoder boards drive the wheels, and one MG995 servo drives the
+gripper (\cref{sec:drive,sec:gripper}). The motors were selected for their size.
+
+\subsection{Sensors}
+\begin{description}
+  \item[Infrared array.] Eight analog reflectance channels at a pitch of 15\unit{mm}, read as
+        voltages between 0\unit{V} on a black surface and 5\unit{V} on a white one. The
+        array serves the line following and, in the simulated mission, the final approach to
+        every station.
+  \item[Depth camera.] An Intel RealSense D435, which provides a colour image and a depth
+        image. In the simulation it is the only sensor used for mapping, localisation,
+        obstacle detection and the reading of QR codes.
+  \item[Wheel encoders.] One on each motor, the source of wheel odometry.
+  \item[Inertial sensor.] The simulation model carries an inertial sensor of the MPU6050
+        class, flat on the plate between the wheels, whose yaw rate is fused with the wheel
+        odometry (\cref{sec:odometry}).
+\end{description}
+
+\subsection{Power and Control}
+The photograph of the robot (\cref{fig:v2-intro}b) shows a battery with an XT60 connector
+at the rear of the plate, a step-down converter module, and a
+microcontroller board on a prototyping board with a solderless breadboard for the signal
+wiring. Both the electronics and the mechanical design were checked extensively before the
+competition.
+
+\subsection{The Failure at the State Round}
+In the state round the infrared array stopped working and the robot could not follow the
+line, so the task was not completed. The cause was not
+established afterwards, and I do not speculate on it here. Two consequences are drawn for
+the design. The line following depended on a single sensor with no fallback. And the photograph shows
+signal wiring on a solderless breadboard, which is not a reliable connection on a moving
+robot. A soldered or connectorised harness, and a check of all eight channels against known
+black and white references at power-up, are the corrections proposed
+in \cref{sec:discussion}.

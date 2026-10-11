@@ -1,0 +1,7 @@
+# `latexmk` in this folder builds build/trident_short_report.pdf
+$pdf_mode = 1;
+$out_dir = 'build';
+$jobname = 'trident_short_report';
+@default_files = ('trident_short_report.tex');
+$pdflatex = 'pdflatex -interaction=nonstopmode -halt-on-error %O %S';
+$ENV{'BSTINPUTS'} = '..:.:' . ($ENV{'BSTINPUTS'} // '');
